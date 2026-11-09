@@ -100,6 +100,41 @@ def _gate(args) -> int:
     return 0 if all(c["ok"] for c in checks) else 1
 
 
+def _split(args) -> int:
+    from .corpus import split
+
+    r = split.make(config.load(args.config), force=args.force)
+    print(("froze" if r["created"] else "frozen") + f" split at {r['dir']} ({r['frozen']})  hash {r['hash'][:12]}")
+    for s in split.SPLITS:
+        print(f"{s:<6} posts {r['posts'][s]:>4}  chunks {r['chunks'][s]:>4}  words {r['words'][s]:>8,}  "
+              f"share {r['share'][s]:.1%}")
+    print(f"held-out clusters: test {r['test_clusters']}  dev {r['dev_clusters']}")
+    if r["unassigned_posts"] or r["missing_posts"]:
+        print(f"posts without a split: {len(r['unassigned_posts'])}; frozen posts no longer in the corpus: "
+              f"{len(r['missing_posts'])}")
+    return 0
+
+
+def _eval(args) -> int:
+    from .eval import harness
+
+    cfg = config.load(args.config)
+    if args.sanity:
+        r = harness.run_sanity(cfg, use_embeddings=not args.no_embed)
+        bad = [k for k, v in r["sanity"].items() if isinstance(v, dict) and v.get("pass") is False]
+        print(f"sanity: {'all metrics pass' if not bad else 'FAIL ' + ', '.join(bad)}")
+    else:
+        if not args.system:
+            print("give --system <name> or --sanity")
+            return 2
+        r = harness.run(cfg, args.system, args.split, use_embeddings=not args.no_embed)
+        s = r["scores"]
+        print(f"{args.system} on {args.split}: M1 accept {s['M1_av']['accept_rate']:.1%}  "
+              f"M15 author {s['M15_attribution'].get('author', 0):.1%}  tic max |z| {s['M6_tic_profile'].get('max_abs_z')}")
+    print(f"wrote {r['_out']}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="quill")
     ap.add_argument("--config", help="path to quill.yaml (default: configs/quill.yaml)")
@@ -122,6 +157,15 @@ def main(argv: list[str] | None = None) -> int:
     a.add_argument("--seed", type=int, default=1)
     a.add_argument("--record", type=int, metavar="BAD", help="number of bad chunks found in the sample")
     a.set_defaults(fn=_spotcheck)
+    a = sub.add_parser("split", help="freeze topic-disjoint train/dev/test splits, or show the frozen ones")
+    a.add_argument("--force", action="store_true", help="re-cluster and overwrite the frozen split")
+    a.set_defaults(fn=_split)
+    a = sub.add_parser("eval", help="score a system on dev or test, or run the metric sanity check")
+    a.add_argument("--system", help="human, impostor, llm, or a name under <eval>/outputs/")
+    a.add_argument("--split", choices=["dev", "test"], default="dev")
+    a.add_argument("--sanity", action="store_true", help="metric sanity check and within-author ceiling on dev")
+    a.add_argument("--no-embed", action="store_true", help="skip StyleDistance (M2)")
+    a.set_defaults(fn=_eval)
     a = sub.add_parser("gate", help="show the Phase 1 exit gate")
     a.set_defaults(fn=_gate)
     args = ap.parse_args(argv)

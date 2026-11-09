@@ -12,7 +12,7 @@ Target voice: Morgan Housel's essays on the Collaborative Fund blog, used with C
 |---|---|
 | 0 Source and consent audit | Done, except the stored consent copy |
 | 1 Extraction and cleaning | Built. Two gate items open: the spot check and the AI-text flag decisions |
-| 2 Splits, eval harness, baselines | Next |
+| 2 Splits, eval harness, baselines | Splits frozen; model-free metrics built and sanity-checked. Baselines and eval inputs open |
 | 2b-10 | Not started |
 
 The full plan is in [knowledge_base/plan.md](knowledge_base/plan.md).
@@ -38,6 +38,9 @@ Data lives in `~/.quill/`, outside the repo. Raw pages go in `~/.quill/raw/colla
 | `uv run quill flags [slug keep\|drop]` | Lists the flags, or records a decision on one |
 | `uv run quill spotcheck [--record N]` | Writes 100 random chunks for a human read; records the count of bad ones |
 | `uv run quill gate` | Shows the Phase 1 exit gate |
+| `uv run quill split` | Freezes topic-disjoint train/dev/test splits, or shows the frozen ones |
+| `uv run quill eval --sanity` | Checks each style metric on dev and recomputes the within-author ceiling |
+| `uv run quill eval --system NAME --split dev` | Scores a system; reports go to `eval_reports/` |
 
 Run them in that order. A rebuild with `ingest` keeps flag decisions and clears the spot-check result.
 
@@ -65,8 +68,10 @@ src/quill/
   audit.py              Phase 0 inventory
   ingest/               page parser; textlib (the Phase 0 reader and stylometrics)
   clean/                boilerplate, twins, dedupe, chunk, pii_regex, ai_check
-  corpus/               build (the pipeline), store (SQLite), gate
-  scorers/              lexicon, contrast ("not X, but Y" detector)
+  corpus/               build (the pipeline), store (SQLite), gate, split
+  scorers/              lexicon, contrast, av (verifier, attribution), stylometry, memo, entities, embed
+  eval/                 pool (author chunks, impostors), harness
+eval_reports/           aggregate metrics only
 tests/                  synthetic pages only; no corpus text
 knowledge_base/         plan, literature review, research notes, decision docs
 ```

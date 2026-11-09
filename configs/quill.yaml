@@ -7,6 +7,8 @@ paths:
   audit: ~/.quill/audit
   corpus: ~/.quill/corpus
   lexicon: ~/.quill/lexicon
+  splits: ~/.quill/splits
+  eval: ~/.quill/eval
   baseline: ~/.quill/research/2026-11-08/simpass/corpus   # human impostor passages; pattern baseline for the lexicon
 
 author:
@@ -34,8 +36,16 @@ corpus:
     six-questions-for-shane-parrish: interview
     DT: interview                                  # six questions for Derek Thompson
     a-chat-with-daniel-kahneman: interview         # a list of Kahneman quotes
+    jay: interview                                 # Jay Regan Q&A with speaker labels
   post_tags:
     an-honest-business-news-update: [satire]
+
+split:                     # plan.md Phase 2; frozen once written
+  version: v1
+  clusters: 15
+  seed: 0
+  test_share: 0.10
+  dev_share: 0.07
 
 ai_check:                  # plan.md Phase 1 step 6
   cutoff: 2022-12-01       # text before this date is treated as AI-free

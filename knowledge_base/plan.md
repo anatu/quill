@@ -222,6 +222,13 @@ Exit gate: 100 random chunks hold ≤3 with leftover quote, byline, chrome, prom
 
 ### Phase 2: Splits, eval harness, baselines (before any training)
 
+**Status 2026-11-09: splits and the model-free half of the harness are built.** Results: `eval_reports/phase2-sanity.md`.
+- Done: frozen split v1 (`uv run quill split`; the post-to-split map is hashed, chunk ids derive from it); impostor pool from the cached similarity-pass passages; M1, M2, M5 (regex only), M6, M7, M8, M9, M12, M15; `uv run quill eval --sanity` and `--system human|impostor|llm|<name>`; the topic-disjoint ceiling.
+- Sanity on dev: M1 AUC 0.994 (ceiling accept 93.5%, impostors 3.3%); M2 classifier AUC 0.994; M6 and M8 pass. Ceiling: StyleDistance AUC 0.54 at n=60, Delta 0.765.
+- M15 fails sanity: FS, Naval and the LLM class are called the author on over 20% of passages. Each has about 10k cached words or fewer. It needs B0 outputs for the LLM class and more FS and Naval text, or it is dropped.
+- The tic profile's reference pools are drawn inside one topic cluster. With pools mixed across topics, the held-out advice cluster failed on "you" (43.6 vs 22.5 per 1k).
+- Not built: eval inputs (briefs, Claude drafts), B0, B1, the recall probe, M3, M4, M10, M11, the decision composite, spaCy NER, the blind kit, the coverage probe. The first four need a Claude generation route and a base model.
+
 Deliverables: frozen splits `~/.quill/splits/v1/{train,dev,test}.ids` with a recorded hash, built before any neighbour training text is pulled; frozen eval inputs for each dev and test chunk (a brief + facts for `write`, a Claude generic draft for `restyle`, made with the Phase 3 prompts); `uv run quill eval --system <name> --split dev|test`, writing JSON and a markdown table to `eval_reports/`; the impostor pool, calibrated scorers, recall-probe baseline, B0/B1 results and blind kit.
 
 Split rules
