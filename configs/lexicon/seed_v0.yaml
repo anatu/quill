@@ -1,0 +1,125 @@
+# Seed lexicon v0 (plan.md Phase 1 step 6; negative_signal.md item 2).
+#
+# Sources
+#   signs  Wikipedia, "Wikipedia:Signs of AI writing", revision fetched 2026-11-09, CC BY-SA 4.0.
+#          Vocabulary and structures from every era, including "Historical indicators".
+#          The page's "Ineffective indicators" are left out. Em dashes are left out: the author uses them.
+#   kobak  Kobak et al. excess words (berenslab/llm-excess-vocab, MIT): configs/lexicon/kobak_excess_words.csv,
+#          rows whose type includes "style". Loaded by scorers/lexicon.py, not listed here.
+#          Words more common than kobak_max_general_per_1k in general English are left out [P]:
+#          the list comes from PubMed abstracts and includes "this", "these" and "their".
+#   slop   slop-score "not X, but Y" stage-1 regexes (sam-paech/slop-score, MIT), ported in scorers/contrast.py.
+#          Its word and trigram lists are not used (mostly fiction vocabulary).
+#
+# Wikipedia-only items (citations, markup, edit summaries, notability phrasing) are left out: they cannot
+# occur in essays. A pattern is a Python regex, compiled with IGNORECASE and MULTILINE.
+
+vocabulary:
+  words:        # lemma: era. Inflected forms are generated (delve -> delves, delved, delving).
+    additionally: 2023-24
+    boast: 2023-24
+    bolster: 2023-25
+    crucial: 2023-25
+    delve: 2023-24
+    emphasize: 2023-26
+    enduring: 2023-25
+    garner: 2023-24
+    intricate: 2023-24
+    intricacy: 2023-24
+    interplay: 2023-24
+    key: 2023-24
+    landscape: 2023-24
+    meticulous: 2023-24
+    meticulously: 2023-24
+    pivotal: 2023-25
+    underscore: 2023-25
+    tapestry: 2023-24
+    testament: 2023-24
+    valuable: 2023-24
+    vibrant: 2023-25
+    enhance: 2024-26
+    foster: 2024-26
+    highlight: 2024-26
+    showcase: 2024-26
+    robust: all
+    challenge: 2026-
+    clearer: 2026-
+    dependable: 2026-
+    echo: 2026-
+    leverage: 2026-
+    matters: 2026-
+    multifaceted: 2026-
+    practical: 2026-
+    prioritize: 2026-
+    quietly: 2026-
+    steady: 2026-
+    universally: 2026-
+    profound: 2023-25 (promotional)
+    exemplify: 2023-25 (promotional)
+    nestled: 2023-25 (promotional)
+    groundbreaking: 2023-25 (promotional)
+    renowned: 2023-25 (promotional)
+    encompass: all
+    cultivate: all
+    symbolize: all
+    resonate: all
+    causal: grok
+    empirical: grok
+    correlate: grok
+  phrases:
+    align_with: '\balign(s|ed|ing)? with\b'
+    deep_dive: '\bdeep dives?\b'
+    testament_to: '\b(is|are|was|stands as) a (testament|reminder)\b'
+    key_role: '\ba (crucial|pivotal|vital|significant|key) (role|moment)\b'
+    importance: '\b(underscor|highlight)(es|s|ed|ing) (its|their|the) (importance|significance)\b'
+    reflects_broader: '\breflect(s|ed|ing)? (a )?broader\b'
+    setting_the_stage: '\bsetting the stage for\b'
+    marks_a_shift: '\b(represents|marks) a shift\b'
+    turning_point: '\bkey turning point\b'
+    evolving_landscape: '\b(ever-)?evolving landscape\b'
+    focal_point: '\bfocal point\b'
+    indelible_mark: '\bindelible mark\b'
+    deeply_rooted: '\bdeeply rooted\b'
+    valuable_insights: '\bvaluable insights?\b'
+    rich_noun: '\brich (tapestry|history|heritage|tradition|array|variety|cultural)\b'
+    commitment_to: '\bcommitment to\b'
+    natural_beauty: '\bnatural beauty\b'
+    heart_of: '\bin the heart of\b'
+    diverse_array: '\bdiverse array\b'
+    vague_attribution: '\b(industry reports|observers have (cited|noted)|experts (argue|say|agree)|some critics argue|several (sources|publications))\b'
+    in_connection: '\bin (connection|association) with\b'
+
+structure:
+  # contrast ("not X, but Y") comes from scorers/contrast.py
+  not_just_but: '\bnot (just|only|merely|simply)\b[^.?!]{1,100}?\bbut\b'
+  rather_than: '\brather than\b'
+  no_no_just: '\bno [\w-]+, no [\w-]+[,;—–-]\s*just\b'
+  copula_avoidance: '\b(serv(es?|ed|ing)|st(ands?|ood|anding)|function(s|ed|ing)?|operat(es?|ed|ing)) as\b|\bboast(s|ed|ing)?\b|\b(represents?|marks?|features?|offers?|maintains?) an?\b|\brefers to\b'
+  trailing_ing_significance: ',\s+(highlighting|underscoring|emphasizing|ensuring|reflecting|symbolizing|contributing to|cultivating|fostering|encompassing|enhancing|showcasing|marking|shaping|demonstrating|illustrating|solidifying|cementing|paving the way|setting the stage)\b'
+  trailing_ing_any: ',\s+(?!including\b|according\b|during\b|something\b|nothing\b|anything\b|everything\b)[a-z]{3,}ing\b[^.?!,;:]{3,90}[.?!]'
+  tricolon: '\b[\w’''-]+(?: [\w’''-]+){0,2}, [\w’''-]+(?: [\w’''-]+){0,2},? and [\w’''-]+'
+  closer: '^(in summary|in conclusion|overall|to sum up|in essence|ultimately|to summarize)\b,'
+  challenges_outlook: '\bdespite (its|their|these|this)\b[^.?!]{0,80}\b(challenges?|faces?)\b|\bfuture outlook\b|\bchallenges and (legacy|future)\b'
+  bold_lead_bullet: '^\s*(?:[-*•]|\d+[.)])\s+\*\*[^*\n]{2,60}\*\*\s*[:—–-]|^\s*[-*•]\s+[A-Z][\w ’''-]{2,40}:\s'
+  nominalization: '\b[a-z]{4,}(tion|sion|ment|ness|ity|ance|ence)s?\b'    # rate only; reported, never flagged alone
+
+artifacts:
+  ai_self_reference: '\bas an? (ai|artificial intelligence|large) (language )?model\b|\bas an ai\b'
+  knowledge_cutoff: '\b(as of|up to) my (last )?(knowledge|training) (update|cutoff|cut-off)\b|\bknowledge cutoff\b'
+  chat_opener: '^\s*(certainly|of course|sure|absolutely)!\s|\byou(''|’)re absolutely right\b|^\s*great question[!.]'
+  chat_closer: '\bi hope this helps\b|\bis there anything else\b|\blet me know if\b|\bwould you like me to\b|\bfeel free to (ask|reach)\b'
+  here_is: '^\s*here(''|’)?s? (is )?(a|an|the|your) (revised|rewritten|polished|draft|updated|improved|more detailed|summary|breakdown|version)\b'
+  refusal: '\bi(''|’)?m sorry,? but\b|\bi (cannot|can(''|’)t) (assist|help|provide|offer)\b'
+  placeholder: '\[(insert|your|add|name|date|company|url|link)\b[^\]]{0,60}\]|\b(?-i:INSERT_[A-Z_]+)\b'
+  tool_residue: 'utm_source=(chatgpt|openai|claude)|turn\d+(search|view|news)\d+|:?contentReference\[oaicite|oai_citation|\[oaicite:'
+  hedged_sources: '\bwhile specific details are (limited|scarce)\b|\bbased on (the )?available information\b|\bin the provided (sources|search results)\b'
+
+exempt:           # author habits that no rule may penalize (plan.md Phase 1 step 6)
+  - em dash
+  - names
+
+kobak_max_general_per_1k: 0.1
+
+rate_only:        # counted and reported, but never part of a family score: too common in all human prose
+  - nominalization
+  - trailing_ing_any

@@ -1,0 +1,61 @@
+# quill configuration. Paths expand ~. Decision record for plan.md Phase 0.
+
+paths:
+  home: ~/.quill
+  raw: ~/.quill/raw/collabfund
+  legal: ~/.quill/legal
+  audit: ~/.quill/audit
+  corpus: ~/.quill/corpus
+  lexicon: ~/.quill/lexicon
+  baseline: ~/.quill/research/2026-11-08/simpass/corpus   # human impostor passages; pattern baseline for the lexicon
+
+author:
+  name: Morgan Housel
+  source: collabfund.com blog
+  register: essay          # one register; length tags only
+
+corpus:
+  min_post_words: 120      # posts below this are dropped (link lists, embeds)
+  twin_ngram: 10           # n-gram size for cross-post reuse
+  twin_share: 0.30         # a post sharing more than this with another post is a twin
+  twin_link_min: 0.05      # [P] a groupless twin joins each source that supplies this share of its n-grams
+  dedupe: {shingle: 5, jaccard: 0.85, min_words: 20}   # [P] paragraph MinHash; min_words spares repeated one-liners
+  chunk:
+    min_words: 150
+    max_words: 800
+    targets: [400, 225, 650]   # [P] targets rotate to fill all buckets
+    gap_markers: null          # or {quote: "<QUOTE>", media: "<IMAGE>"} to mark removed quotes and images in chunk text
+  drop_posts:              # whole posts removed, with the reason (tests/cases/phase0_extraction.md, case 2)
+    book-the-psychology-of-money: book_promo
+    my-new-book-same-as-ever: book_promo
+    my-new-book-the-art-of-spending-money: book_promo
+    my-thoughts-on-tariffs-economic-history-and-the-market-decline: transcript   # spoken, not written
+    six-questions-for-brent-beshore: interview     # the answers are the guest's words
+    six-questions-for-shane-parrish: interview
+    DT: interview                                  # six questions for Derek Thompson
+    a-chat-with-daniel-kahneman: interview         # a list of Kahneman quotes
+  post_tags:
+    an-honest-business-news-update: [satire]
+
+ai_check:                  # plan.md Phase 1 step 6
+  cutoff: 2022-12-01       # text before this date is treated as AI-free
+  sustained_after: 2023-03-01
+  percentile: 95
+  min_hits: 2              # [P] a rate flag needs at least this many hits in the post
+
+# Phase 0 must reproduce these figures from the 2026-11-08 measurement pass.
+# Sources: simpass/corpus/_summary_all.json (posts, words) and the coordinator's
+# crawl counts (quote words, twins), which used a simpler parser.
+expected:
+  pages: 351
+  kept_posts: 342
+  words: 337898
+  quote_words: 34503
+  twin_posts: 12
+  share_post_2022: 0.19
+
+decisions:
+  launch_register: essay
+  tier: T3
+  data_prep_generator: api   # consent scope claude_api: yes (~/.quill/legal/scope.yaml)
+  consent_record: ~/.quill/legal/scope.yaml

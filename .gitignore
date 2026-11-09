@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# Secrets
+.env
+.env.*
+
+# Model weights and data never go in git (they live in ~/.quill/)
+*.safetensors
+*.gguf
+*.npz
+*.sqlite
+*.jsonl
+*.html
+data/
+raw/
+adapters/
+models/
