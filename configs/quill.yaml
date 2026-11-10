@@ -11,6 +11,13 @@ paths:
   eval: ~/.quill/eval
   baseline: ~/.quill/research/2026-11-08/simpass/corpus   # human impostor passages; pattern baseline for the lexicon
 
+gen:                       # generation routes (decided 2026-11-09)
+  route: claude_cli        # `claude -p`, no tools, no settings, own system prompt; needs scope claude_api: yes
+  util_model: claude-sonnet-5-5    # fact lists and briefs
+  draft_model: claude-opus-5-5     # generic drafts, the style guide and B0 [P]
+  workers: 4
+  base_model: ~/.quill/models/qwen3.5-9b-4bit   # mlx-community/Qwen3.5-9B-4bit; B1, the recall probe, the write drafter
+
 author:
   name: Morgan Housel
   source: collabfund.com blog
@@ -26,7 +33,13 @@ corpus:
     min_words: 150
     max_words: 800
     targets: [400, 225, 650]   # [P] targets rotate to fill all buckets
-    gap_markers: null          # or {quote: "<QUOTE>", media: "<IMAGE>"} to mark removed quotes and images in chunk text
+    gap_markers: {quote: "<QUOTE>", media: "<IMAGE>"}   # chunks.text_marked marks removed quotes and images; chunks.text stays the author's words only (scorers use it). Phase 3 trains on text_marked
+  unmarked_quotes:         # quotations set as plain paragraphs, no markup or quote marks: slug -> opening words (spot check 2026-11-09)
+    the-freakishly-strong-base: ["You have to go back in time to 1994"]
+    little: ["Robert McNamara demanded that everything be quantified"]
+    how-this-all-happened: ["The rich man smokes the same sort of cigarettes"]
+    justifying-optimism: ["The optimism bias protects us from accurately"]
+    you-have-to-live-it-to-believe-it: ["One thing that’s happening is now enough time has passed", "We have a new generation of people in the Valley"]
   drop_posts:              # whole posts removed, with the reason (tests/cases/phase0_extraction.md, case 2)
     book-the-psychology-of-money: book_promo
     my-new-book-same-as-ever: book_promo

@@ -2,8 +2,16 @@
 
 Both use character 3-5-gram TF-IDF (top 10k features) and logistic regression. They are
 decision metrics, so they share nothing with the rerank scorers.
+
+Content masking (Stamatatos 2017, text distortion): with a `keep` list, every word outside it
+becomes `*` and every number `0`, so names and topic words cannot carry the decision. The
+keep list is the most frequent words of the impostor authors, never the author's own.
 """
 from __future__ import annotations
+
+import re
+from collections import Counter
+from functools import partial
 
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -11,16 +19,30 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import StratifiedGroupKFold
 from sklearn.pipeline import make_pipeline
 
+TOKEN = re.compile(r"[A-Za-z]+(?:['’][A-Za-z]+)*|\d[\d,.]*\d|\d")
 
-def _pipe():
+
+def frequent_words(texts: list[str], k: int) -> frozenset[str]:
+    c = Counter(w.lower() for t in texts for w in TOKEN.findall(t) if not w[0].isdigit())
+    return frozenset(w for w, _ in c.most_common(k))
+
+
+def mask(text: str, keep: frozenset[str]) -> str:
+    return TOKEN.sub(lambda m: "0" if m[0][0].isdigit() else m[0] if m[0].lower() in keep else "*", text)
+
+
+def _pipe(keep: frozenset[str] | None = None):
     return make_pipeline(
-        TfidfVectorizer(analyzer="char", ngram_range=(3, 5), max_features=10_000, sublinear_tf=True, lowercase=False),
+        TfidfVectorizer(preprocessor=partial(mask, keep=keep) if keep else None, analyzer="char", ngram_range=(3, 5), max_features=10_000, sublinear_tf=True, lowercase=False),
         LogisticRegression(C=10.0, max_iter=3000, class_weight="balanced"))
 
 
 class Verifier:
     """M1. P(author) per passage. The accept threshold sits at a fixed impostor false-accept rate,
     set from cross-validated predictions on the training impostors."""
+
+    def __init__(self, keep: frozenset[str] | None = None):
+        self.keep = keep
 
     def fit(self, pos: list[str], pos_groups: list[str], neg: list[str], neg_groups: list[str],
             fpr: float = 0.05, seed: int = 0) -> "Verifier":
@@ -30,10 +52,10 @@ class Verifier:
         oof = np.zeros(len(y))
         k = min(5, len(set(pos_groups)), len(set(neg_groups)))
         for tr, te in StratifiedGroupKFold(n_splits=k, shuffle=True, random_state=seed).split(X, y, g):
-            oof[te] = _pipe().fit(X[tr], y[tr]).predict_proba(X[te])[:, 1]
+            oof[te] = _pipe(self.keep).fit(X[tr], y[tr]).predict_proba(X[te])[:, 1]
         self.threshold = float(np.quantile(oof[y == 0], 1 - fpr))
         self.cv_accept_pos = float((oof[y == 1] >= self.threshold).mean())
-        self.model = _pipe().fit(X, y)
+        self.model = _pipe(self.keep).fit(X, y)
         return self
 
     def prob(self, texts: list[str]) -> np.ndarray:

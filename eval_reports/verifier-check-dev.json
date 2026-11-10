@@ -1,0 +1,93 @@
+{
+ "system": "verifier-check",
+ "split": "dev",
+ "generated": "2026-11-10T05:11:16",
+ "passages": {
+  "author": 77,
+  "draft": 81,
+  "impostor": 519
+ },
+ "scorers": {
+  "M1 char n-grams, raw": {
+   "auc_impostor": 0.9944,
+   "auc_draft": 0.944,
+   "paired_win": 0.9839,
+   "accept_author": 0.9351,
+   "accept_draft": 0.3457,
+   "accept_b0": 0.5513,
+   "accept_b1": 0.3946
+  },
+  "M1 masked, keep 200": {
+   "auc_impostor": 0.9928,
+   "auc_draft": 0.9264,
+   "paired_win": 0.9516,
+   "accept_author": 0.974,
+   "accept_draft": 0.4691,
+   "accept_b0": 0.9359,
+   "accept_b1": 0.5405
+  },
+  "M1 masked, keep 500": {
+   "auc_impostor": 0.9953,
+   "auc_draft": 0.9474,
+   "paired_win": 0.9839,
+   "accept_author": 0.987,
+   "accept_draft": 0.4444,
+   "accept_b0": 0.859,
+   "accept_b1": 0.5405
+  },
+  "M1 masked, keep 1000": {
+   "auc_impostor": 0.9961,
+   "auc_draft": 0.9569,
+   "paired_win": 1.0,
+   "accept_author": 0.987,
+   "accept_draft": 0.5556,
+   "accept_b0": 0.8654,
+   "accept_b1": 0.6
+  },
+  "M1 masked, keep 3000": {
+   "auc_impostor": 0.9956,
+   "auc_draft": 0.9572,
+   "paired_win": 1.0,
+   "accept_author": 0.974,
+   "accept_draft": 0.4198,
+   "accept_b0": 0.6667,
+   "accept_b1": 0.427
+  },
+  "M2 StyleDistance, classifier": {
+   "auc_impostor": 0.9937,
+   "auc_draft": 0.9923,
+   "paired_win": 0.9839,
+   "accept_author": 0.987,
+   "accept_draft": 0.0988,
+   "accept_b0": 0.6218,
+   "accept_b1": 0.2054
+  },
+  "M2 StyleDistance, centroid delta": {
+   "auc_impostor": 0.8616,
+   "auc_draft": 1.0,
+   "paired_win": 1.0,
+   "accept_author": 0.2597,
+   "accept_draft": 0.0,
+   "accept_b0": 0.0,
+   "accept_b1": 0.0
+  },
+  "M3 LUAR, classifier": {
+   "auc_impostor": 0.9957,
+   "auc_draft": 0.979,
+   "paired_win": 1.0,
+   "accept_author": 0.987,
+   "accept_draft": 0.284,
+   "accept_b0": 0.8654,
+   "accept_b1": 0.4
+  },
+  "M3 LUAR, centroid delta": {
+   "auc_impostor": 0.8263,
+   "auc_draft": 1.0,
+   "paired_win": 1.0,
+   "accept_author": 0.3247,
+   "accept_draft": 0.0,
+   "accept_b0": 0.0,
+   "accept_b1": 0.0
+  }
+ }
+}

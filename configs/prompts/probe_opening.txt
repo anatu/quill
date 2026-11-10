@@ -1,0 +1,3 @@
+Continue this passage by {author} with what comes next in the original, about {words} words. Output only the continuation.
+
+{opening}

@@ -1,0 +1,8 @@
+Write this in the voice of {author}. Use only the facts given: every name, number and date below, and no others. About {words} words.
+Output only the text: no title, no preamble, no notes. Plain text with blank lines between paragraphs: no markdown, no bold.
+
+REQUEST:
+{brief}
+
+FACTS:
+{facts}

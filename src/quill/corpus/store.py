@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS posts (
   twin_group TEXT, twin_links TEXT, tags TEXT, hrefs TEXT, text TEXT);
 CREATE TABLE IF NOT EXISTS chunks (
   id TEXT PRIMARY KEY, post_file TEXT REFERENCES posts(file), seq INTEGER, twin_group TEXT,
-  words INTEGER, length_bucket TEXT, text TEXT, flags TEXT);
+  words INTEGER, length_bucket TEXT, text TEXT, flags TEXT, text_marked TEXT);
 CREATE TABLE IF NOT EXISTS dropped_blocks (post_file TEXT, reason TEXT, words INTEGER, text TEXT);
 CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT);
 CREATE TABLE IF NOT EXISTS ai_flags (
@@ -58,9 +58,9 @@ def write_corpus(db: sqlite3.Connection, posts: list[dict], meta: dict) -> None:
                  json.dumps(p.get("tags", [])), json.dumps(p.get("hrefs", [])), "\n\n".join(b["text"] for b in p["blocks"])))
             db.executemany("INSERT INTO dropped_blocks VALUES (?,?,?,?)",
                            [(p["file"], d["reason"], d["words"], d["text"]) for d in p["dropped"]])
-            db.executemany("INSERT INTO chunks VALUES (?,?,?,?,?,?,?,?)",
+            db.executemany("INSERT INTO chunks VALUES (?,?,?,?,?,?,?,?,?)",
                            [(c["id"], p["file"], i, p.get("twin_group"), c["words"], c["bucket"], c["text"],
-                             json.dumps(c["flags"])) for i, c in enumerate(p.get("chunks", []))])
+                             json.dumps(c["flags"]), c.get("text_marked")) for i, c in enumerate(p.get("chunks", []))])
         db.executemany("INSERT INTO meta VALUES (?,?)", [(k, json.dumps(v)) for k, v in meta.items()])
 
 

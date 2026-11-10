@@ -1,7 +1,7 @@
 {
  "system": "sanity",
  "split": "dev",
- "generated": "2026-11-09T14:57:42",
+ "generated": "2026-11-10T09:24:41",
  "split_hash": "bec0e58ea4a7386fc3e6c17de1d62831d92e31e5bb672405f4f6c6f048dda92f",
  "sanity": {
   "part": "dev",
@@ -9,58 +9,55 @@
   "impostor_passages": 519,
   "llm_passages": 18,
   "M1": {
-   "auc": 0.9944,
-   "threshold": 0.3936,
-   "ceiling_accept": 0.9351,
-   "impostor_accept": 0.0328,
-   "llm_accept": 0.1667,
+   "auc": 0.9925,
+   "threshold": 0.2991,
+   "ceiling_accept": 0.9481,
+   "impostor_accept": 0.0501,
+   "llm_accept": 0.1111,
    "impostor_accept_by_author": {
     "batnick": 0.0,
-    "brown": 0.0,
+    "brown": 0.333,
     "buffett": 0.0,
-    "carlson": 0.462,
-    "clear": 0.136,
+    "carlson": 0.538,
+    "clear": 0.091,
     "clements": 0.083,
     "fried": 0.0,
-    "fs": 0.167,
+    "fs": 0.333,
     "godin": 0.0,
     "graham": 0.0,
     "holiday": 0.333,
     "kelly": 0.0,
     "lamade": 0.0,
     "maggiulli": 0.062,
-    "marks": 0.0,
+    "marks": 0.042,
     "mckenzie": 0.0,
-    "naval": 0.25,
-    "sivers": 0.25,
+    "naval": 0.75,
+    "sivers": 0.5,
     "wiggins": 0.0
+   },
+   "negatives": {
+    "impostor_passages": 1818,
+    "draft_passages": 933
    },
    "pass": true
   },
   "M15": {
-   "author_share_on_author": 1.0,
-   "fs_recall": 0.0,
-   "fs_called_author": 0.833,
-   "fs_n": 6,
-   "lamade_recall": 0.94,
-   "lamade_called_author": 0.06,
+   "author_share_on_author": 0.8831,
+   "lamade_recall": 0.74,
+   "lamade_called_author": 0.0,
    "lamade_n": 50,
-   "llm_recall": 0.667,
-   "llm_called_author": 0.278,
-   "llm_n": 18,
-   "naval_recall": 0.375,
-   "naval_called_author": 0.625,
-   "naval_n": 8,
-   "classes_called_author_over_20pct": [
-    "fs",
-    "llm",
-    "naval"
-   ],
-   "pass": false
+   "llm_recall": 0.875,
+   "llm_called_author": 0.125,
+   "llm_n": 8,
+   "other_recall": 0.977,
+   "other_called_author": 0.015,
+   "other_n": 469,
+   "classes_called_author_over_20pct": [],
+   "pass": true
   },
   "M2": {
-   "classifier_auc": 0.9939,
-   "centroid_delta_auc": 0.8613,
+   "classifier_auc": 0.9941,
+   "centroid_delta_auc": 0.897,
    "pass": true
   },
   "M6": {
@@ -79,7 +76,7 @@
    "pass": true
   },
   "M8": {
-   "author_per_1k": 24.096,
+   "author_per_1k": 24.097,
    "impostor_per_1k": 7.277,
    "pass": true
   }
@@ -100,21 +97,21 @@
    10,
    12
   ],
-  "words_A": 142246,
-  "words_B": 144534,
+  "words_A": 142113,
+  "words_B": 144315,
   "delta_A_vs_B": {
    "delta": 0.765,
    "sd": 0.062,
    "words": 4000
   },
   "styledistance_auc_n20": {
-   "auc": 0.475,
-   "sd": 0.133,
+   "auc": 0.486,
+   "sd": 0.128,
    "n_per_class": 20
   },
   "styledistance_auc_n60": {
-   "auc": 0.538,
-   "sd": 0.07,
+   "auc": 0.515,
+   "sd": 0.05,
    "n_per_class": 60
   }
  },
@@ -122,85 +119,84 @@
   "human": {
    "n_items": 62,
    "n_passages": 77,
-   "words": 22869,
+   "words": 22868,
    "M1_av": {
-    "accept_rate": 0.9351,
-    "mean_prob": 0.8149
+    "accept_rate": 0.9481,
+    "mean_prob": 0.8286
    },
    "M15_attribution": {
-    "author": 1.0,
-    "fs": 0.0,
+    "author": 0.8831,
     "lamade": 0.0,
-    "llm": 0.0,
-    "naval": 0.0
+    "llm": 0.013,
+    "other": 0.1039
    },
    "M6_tic_profile": {
     "n_pools": 10,
     "features": {
      "sent_len_mean": {
-      "value": 14.851,
-      "reference": 14.7,
-      "z": 0.15,
+      "value": 14.86,
+      "reference": 14.714,
+      "z": 0.14,
       "share_abs_z_gt_2": 0.0
      },
      "sent_len_sd": {
-      "value": 8.895,
-      "reference": 9.328,
+      "value": 8.89,
+      "reference": 9.326,
       "z": -0.53,
       "share_abs_z_gt_2": 0.1
      },
      "words_per_para": {
-      "value": 29.47,
-      "reference": 33.515,
-      "z": -0.57,
+      "value": 29.507,
+      "reference": 33.735,
+      "z": -0.61,
       "share_abs_z_gt_2": 0.0
      },
      "one_sent_para_share": {
-      "value": 0.461,
-      "reference": 0.424,
-      "z": 0.23,
+      "value": 0.46,
+      "reference": 0.42,
+      "z": 0.26,
       "share_abs_z_gt_2": 0.1
      },
      "sp_per_1k": {
-      "value": 43.609,
-      "reference": 24.522,
+      "value": 43.611,
+      "reference": 24.575,
       "z": 1.6,
       "share_abs_z_gt_2": 0.5
      },
      "emdash_per_1k": {
-      "value": 6.583,
-      "reference": 5.849,
-      "z": 0.35,
+      "value": 6.584,
+      "reference": 5.793,
+      "z": 0.38,
       "share_abs_z_gt_2": 0.1
      },
      "colon_per_1k": {
-      "value": 6.583,
-      "reference": 6.166,
-      "z": 0.14,
+      "value": 6.539,
+      "reference": 6.168,
+      "z": 0.13,
       "share_abs_z_gt_2": 0.0
      },
      "semicolon_per_1k": {
       "value": 1.193,
-      "reference": 0.839,
-      "z": 0.57,
+      "reference": 0.862,
+      "z": 0.5,
       "share_abs_z_gt_2": 0.1
      },
      "paren_per_1k": {
       "value": 1.281,
-      "reference": 0.916,
-      "z": 0.31,
-      "share_abs_z_gt_2": 0.0
+      "reference": 0.874,
+      "z": 0.4,
+      "share_abs_z_gt_2": 0.1
      },
      "question_per_100s": {
-      "value": 4.134,
-      "reference": 3.557,
-      "z": 0.25,
+      "value": 4.137,
+      "reference": 3.561,
+      "z": 0.26,
       "share_abs_z_gt_2": 0.1
      },
      "mattr500": {
       "value": 0.516,
       "reference": 0.545,
-      "z": -1.23,
+      "z": -1.25,
       "share_abs_z_gt_2": 0.2
      }
     },
@@ -212,13 +208,16 @@
     "words": 4000
    },
    "M2_styledistance_delta": {
-    "mean": 0.092,
-    "sd": 0.0217
+    "mean": 0.094,
+    "sd": 0.0243
+   },
+   "M2_classifier": {
+    "accept_rate": 0.987
    },
    "M7_lexicon": {
     "vocabulary": {
-     "per_1k": 0.839,
-     "author_per_1k": 0.839,
+     "per_1k": 0.84,
+     "author_per_1k": 0.84,
      "ratio": 1.0
     },
     "structure": {
@@ -231,8 +230,8 @@
     }
    },
    "M8_signature": {
-    "per_1k": 24.096,
-    "author_per_1k": 24.096,
+    "per_1k": 24.097,
+    "author_per_1k": 24.097,
     "ratio": 1.0
    }
   },
@@ -241,87 +240,86 @@
    "n_passages": 519,
    "words": 164664,
    "M1_av": {
-    "accept_rate": 0.0328,
-    "mean_prob": 0.0667
+    "accept_rate": 0.0501,
+    "mean_prob": 0.0594
    },
    "M15_attribution": {
-    "author": 0.7283,
-    "fs": 0.0,
-    "lamade": 0.2428,
-    "llm": 0.0154,
-    "naval": 0.0135
+    "author": 0.0135,
+    "lamade": 0.0713,
+    "llm": 0.0096,
+    "other": 0.9056
    },
    "M6_tic_profile": {
     "n_pools": 75,
     "features": {
      "sent_len_mean": {
       "value": 17.988,
-      "reference": 14.7,
-      "z": 2.56,
+      "reference": 14.714,
+      "z": 2.57,
       "share_abs_z_gt_2": 0.6
      },
      "sent_len_sd": {
       "value": 11.536,
-      "reference": 9.328,
+      "reference": 9.326,
       "z": 2.34,
       "share_abs_z_gt_2": 0.56
      },
      "words_per_para": {
       "value": 51.835,
-      "reference": 33.515,
-      "z": 3.27,
+      "reference": 33.735,
+      "z": 3.26,
       "share_abs_z_gt_2": 0.8
      },
      "one_sent_para_share": {
       "value": 0.269,
-      "reference": 0.424,
-      "z": -1.64,
-      "share_abs_z_gt_2": 0.35
+      "reference": 0.42,
+      "z": -1.57,
+      "share_abs_z_gt_2": 0.29
      },
      "sp_per_1k": {
       "value": 14.846,
-      "reference": 24.522,
-      "z": -0.81,
+      "reference": 24.575,
+      "z": -0.82,
       "share_abs_z_gt_2": 0.0
      },
      "emdash_per_1k": {
       "value": 2.065,
-      "reference": 5.849,
-      "z": -1.7,
-      "share_abs_z_gt_2": 0.47
+      "reference": 5.793,
+      "z": -1.71,
+      "share_abs_z_gt_2": 0.48
      },
      "colon_per_1k": {
       "value": 3.96,
-      "reference": 6.166,
-      "z": -0.62,
+      "reference": 6.168,
+      "z": -0.63,
       "share_abs_z_gt_2": 0.0
      },
      "semicolon_per_1k": {
       "value": 0.99,
-      "reference": 0.839,
-      "z": 0.24,
-      "share_abs_z_gt_2": 0.05
+      "reference": 0.862,
+      "z": 0.19,
+      "share_abs_z_gt_2": 0.04
      },
      "paren_per_1k": {
       "value": 5.783,
-      "reference": 0.916,
-      "z": 4.24,
-      "share_abs_z_gt_2": 0.84
+      "reference": 0.874,
+      "z": 4.95,
+      "share_abs_z_gt_2": 0.91
      },
      "question_per_100s": {
       "value": 7.091,
-      "reference": 3.557,
-      "z": 1.49,
-      "share_abs_z_gt_2": 0.33
+      "reference": 3.561,
+      "z": 1.54,
+      "share_abs_z_gt_2": 0.35
      },
      "mattr500": {
       "value": 0.53,
       "reference": 0.545,
-      "z": 0.34,
+      "z": 0.37,
       "share_abs_z_gt_2": 0.04
      }
     },
-    "max_abs_z": 4.24
+    "max_abs_z": 4.95
    },
    "M6_delta": {
     "delta": 1.003,
@@ -329,13 +327,16 @@
     "words": 4000
    },
    "M2_styledistance_delta": {
-    "mean": 0.03,
-    "sd": 0.0532
+    "mean": 0.0204,
+    "sd": 0.0523
+   },
+   "M2_classifier": {
+    "accept_rate": 0.0539
    },
    "M7_lexicon": {
     "vocabulary": {
      "per_1k": 4.27,
-     "author_per_1k": 0.839,
+     "author_per_1k": 0.84,
      "ratio": 5.09
     },
     "structure": {
@@ -349,7 +350,7 @@
    },
    "M8_signature": {
     "per_1k": 7.277,
-    "author_per_1k": 24.096,
+    "author_per_1k": 24.097,
     "ratio": 0.3
    }
   },
@@ -358,101 +359,103 @@
    "n_passages": 43,
    "words": 13361,
    "M1_av": {
-    "accept_rate": 0.0698,
-    "mean_prob": 0.1799
+    "accept_rate": 0.0465,
+    "mean_prob": 0.0792
    },
    "M15_attribution": {
-    "author": 0.1163,
-    "fs": 0.0,
-    "lamade": 0.0233,
-    "llm": 0.8605,
-    "naval": 0.0
+    "author": 0.0233,
+    "lamade": 0.0,
+    "llm": 0.9302,
+    "other": 0.0465
    },
    "M6_tic_profile": {
     "n_pools": 6,
     "features": {
      "sent_len_mean": {
       "value": 12.672,
-      "reference": 14.7,
-      "z": -1.5,
+      "reference": 14.714,
+      "z": -1.52,
       "share_abs_z_gt_2": 0.0
      },
      "sent_len_sd": {
       "value": 8.038,
-      "reference": 9.328,
+      "reference": 9.326,
       "z": -1.48,
       "share_abs_z_gt_2": 0.33
      },
      "words_per_para": {
       "value": 36.168,
-      "reference": 33.515,
-      "z": 0.57,
+      "reference": 33.735,
+      "z": 0.54,
       "share_abs_z_gt_2": 0.17
      },
      "one_sent_para_share": {
       "value": 0.257,
-      "reference": 0.424,
-      "z": -1.71,
+      "reference": 0.42,
+      "z": -1.65,
       "share_abs_z_gt_2": 0.33
      },
      "sp_per_1k": {
       "value": 15.992,
-      "reference": 24.522,
-      "z": -0.7,
+      "reference": 24.575,
+      "z": -0.71,
       "share_abs_z_gt_2": 0.0
      },
      "emdash_per_1k": {
       "value": 0.0,
-      "reference": 5.849,
-      "z": -2.63,
+      "reference": 5.793,
+      "z": -2.66,
       "share_abs_z_gt_2": 1.0
      },
      "colon_per_1k": {
       "value": 1.046,
-      "reference": 6.166,
-      "z": -1.46,
+      "reference": 6.168,
+      "z": -1.47,
       "share_abs_z_gt_2": 0.0
      },
      "semicolon_per_1k": {
       "value": 0.149,
-      "reference": 0.839,
-      "z": -1.09,
+      "reference": 0.862,
+      "z": -1.07,
       "share_abs_z_gt_2": 0.0
      },
      "paren_per_1k": {
       "value": 0.075,
-      "reference": 0.916,
-      "z": -0.73,
+      "reference": 0.874,
+      "z": -0.81,
       "share_abs_z_gt_2": 0.0
      },
      "question_per_100s": {
       "value": 1.61,
-      "reference": 3.557,
-      "z": -0.84,
+      "reference": 3.561,
+      "z": -0.87,
       "share_abs_z_gt_2": 0.0
      },
      "mattr500": {
       "value": 0.537,
       "reference": 0.545,
-      "z": 0.67,
+      "z": 0.71,
       "share_abs_z_gt_2": 0.17
      }
     },
-    "max_abs_z": 2.63
+    "max_abs_z": 2.66
    },
    "M6_delta": {
-    "delta": 0.969,
+    "delta": 0.97,
     "sd": 0.08,
     "words": 4000
    },
    "M2_styledistance_delta": {
-    "mean": -0.0874,
-    "sd": 0.0051
+    "mean": -0.074,
+    "sd": 0.0385
+   },
+   "M2_classifier": {
+    "accept_rate": 0.0
    },
    "M7_lexicon": {
     "vocabulary": {
      "per_1k": 6.352,
-     "author_per_1k": 0.839,
+     "author_per_1k": 0.84,
      "ratio": 7.57
     },
     "structure": {
@@ -466,20 +469,17 @@
    },
    "M8_signature": {
     "per_1k": 15.038,
-    "author_per_1k": 24.096,
+    "author_per_1k": 24.097,
     "ratio": 0.62
    }
   }
  },
  "signature_phrases": 50,
  "not_implemented": [
-  "M3 LUAR",
-  "M4 MIS / fact entailment",
-  "M10 detector",
-  "M11 judge",
   "M13 alpha",
-  "M14 residue",
-  "decision composite (needs M4)",
-  "spaCy NER in M5"
+  "M14 residue (both Phase 2b)"
+ ],
+ "dropped": [
+  "M10 Fast-DetectGPT: fails sanity on dev (eval_reports/m10-dev.md)"
  ]
 }

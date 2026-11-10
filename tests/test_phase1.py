@@ -71,6 +71,37 @@ def test_blockquote_is_dropped_and_leaves_a_gap_mark():
     assert {d["reason"] for d in dropped} == {"blockquote", "quote_attribution"}
 
 
+def test_epigraph_goes_with_its_attribution():
+    short = "<p>“History never repeats. Man does.”</p><p>– Voltaire</p><p>My view follows.</p>"
+    bare = "<p>We are all children of earth; grant us that simple knowledge.</p><p>– FDR, 1942</p><p>My view follows.</p>"
+    for body in (short, bare):
+        kept, dropped = boilerplate.clean_post(read_page(page(body))["blocks"])
+        assert [b["text"] for b in kept] == ["My view follows."]
+        assert [d["reason"] for d in dropped] == ["inline_quote", "quote_attribution"]
+    one = "<p>It’s a rare person who wants to hear it. —Richard Cavett</p><p>My view follows.</p><p>For more:</p>"
+    kept, dropped = boilerplate.clean_post(read_page(page(one))["blocks"])
+    assert [b["text"] for b in kept] == ["My view follows."] and len(dropped) == 2
+    later = "<p>Opening.</p><p>My own line that runs on.</p><p>– and then a dash aside</p>"
+    assert len(boilerplate.clean_post(read_page(page(later))["blocks"])[0]) == 3
+
+
+def test_spot_check_leftovers_are_dropped():
+    body = ("<p>My own closing line.</p><p>Bezos once explained:</p><p>You have to go back in time to 1994.</p>"
+            "<p>The recession was caused by [x].</p><p><em>Collaborative Fund team members own shares in companies "
+            "mentioned in this article.</em></p><p>You can download the report <a href='/r.pdf'>here</a>, or click "
+            "the image below.</p><p>More:</p><ul><li><a href='/blog/a/'>Another Post Title</a></li></ul>")
+    kept, dropped = boilerplate.clean_post(read_page(page(body))["blocks"], quotes=["You have to go back"])
+    assert [b["text"] for b in kept] == ["My own closing line.", "Bezos once explained:", "The recession was caused by [x]."]
+    assert kept[1]["gaps"] == {"quote"}
+    assert sorted(d["reason"] for d in dropped) == ["inline_quote", "promo", "promo", "related_links", "related_links"]
+
+
+def test_embedded_tweet_leaves_a_quote_gap():
+    body = "<p>Craig explained:</p><blockquote class='twitter-tweet'><p>Do not hold on.</p></blockquote><p>After.</p>"
+    kept, _ = boilerplate.clean_post(read_page(page(body))["blocks"])
+    assert [b["text"] for b in kept] == ["Craig explained:", "After."] and kept[0]["gaps"] == {"quote"}
+
+
 def test_image_leaves_a_media_gap():
     kept, _ = boilerplate.clean_post(read_page(page("<p>Here is the chart:</p><img src='c.png'><p>After.</p>"))["blocks"])
     assert kept[0]["gaps"] == {"media"} and "gaps" not in kept[1]
@@ -182,9 +213,9 @@ def test_leadin_stays_with_what_it_introduces():
 def test_gap_flags_and_optional_markers():
     blocks = [dict(text="He wrote:", kind="p", n=None, gaps={"quote"})] + _blocks([200])
     plain = chunk.chunk_post(blocks, key="k")[0]
-    assert {"quote_gap", "dangling_leadin"} <= set(plain["flags"]) and "<QUOTE>" not in plain["text"]
+    assert {"quote_gap", "dangling_leadin"} <= set(plain["flags"]) and "text_marked" not in plain
     marked = chunk.chunk_post(blocks, key="k", markers={"quote": "<QUOTE>"})[0]
-    assert marked["text"].startswith("He wrote:\n\n<QUOTE>\n\n") and marked["words"] == plain["words"]
+    assert marked["text_marked"].startswith("He wrote:\n\n<QUOTE>\n\n") and marked["text"] == plain["text"]
 
 
 def test_pii_finds_emails_and_phones_only():

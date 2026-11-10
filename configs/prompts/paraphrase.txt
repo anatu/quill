@@ -1,0 +1,5 @@
+Rewrite the text below in plain, neutral English. Keep every fact, name, number, date and link, in order. Remove personal style: standard punctuation, no slang, no idioms. Keep about the same length.
+Output only the rewrite.
+
+TEXT:
+{text}

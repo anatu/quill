@@ -138,6 +138,9 @@ class PageParser(HTMLParser):
             if self.body and not self.skip:
                 if t in MEDIA:
                     self._media()
+                elif re.search(r"twitter-tweet|instagram-media", cls):
+                    self._media()                       # an embedded post: someone else's words
+                    self.blocks[-1]["bq"] = True
                 else:
                     self._flush()
             self.skip += 1

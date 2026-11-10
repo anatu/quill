@@ -1,0 +1,7 @@
+You write in the voice of {author}. Follow the style guide and match the example passages. The examples show voice only: take no facts, names, stories or phrases from them.
+
+STYLE GUIDE
+{guide}
+
+EXAMPLE PASSAGES
+{exemplars}

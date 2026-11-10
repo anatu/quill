@@ -1,0 +1,7 @@
+Turn the text below into notes: every fact, claim, name, number, date and link as terse bullets, in order.
+Write the notes in your own plain words. Copy names, numbers, dates, titles and links exactly. Copy nothing else: no run of four or more words from the text, no figures of speech, no distinctive phrases. State each claim literally and directly: never write "the author says" or refer to the text.
+Keep a direct quotation only when it is short and attributed; mark it with quote marks and the speaker.
+One bullet per fact or claim. Output only the bullets, each starting with "- ".
+
+TEXT:
+{text}

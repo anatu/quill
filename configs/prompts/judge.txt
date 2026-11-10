@@ -1,0 +1,12 @@
+Below are reference excerpts by one author, then two passages, A and B. One of the two is more likely to be by the same author as the references. Judge by writing style only: sentence rhythm, word choice, punctuation, how points are opened and closed. Ignore topic and factual content.
+
+REFERENCES
+{references}
+
+PASSAGE A
+{a}
+
+PASSAGE B
+{b}
+
+Which passage is more likely by the author of the references? Answer with one letter, A or B, and nothing else.

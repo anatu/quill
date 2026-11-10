@@ -1,0 +1,46 @@
+{
+ "system": "m10-fast-detectgpt",
+ "split": "dev",
+ "generated": "2026-11-10T09:32:45",
+ "model": "gpt-neo-2.7B",
+ "threshold": 1.5165,
+ "sets": {
+  "author, held out": {
+   "n": 77,
+   "mean": 0.03,
+   "flagged": 0.0519,
+   "auc": null
+  },
+  "b0": {
+   "n": 156,
+   "mean": 0.057,
+   "flagged": 0.0769,
+   "auc": 0.5009
+  },
+  "b1": {
+   "n": 183,
+   "mean": 0.212,
+   "flagged": 0.1585,
+   "auc": 0.4926
+  },
+  "b2": {
+   "n": 81,
+   "mean": -0.334,
+   "flagged": 0.0494,
+   "auc": 0.3957
+  },
+  "Claude controls (older model)": {
+   "n": 43,
+   "mean": 1.77,
+   "flagged": 0.5814,
+   "auc": 0.9139
+  },
+  "other human authors": {
+   "n": 519,
+   "mean": -0.402,
+   "flagged": 0.0809,
+   "auc": 0.3933
+  }
+ },
+ "pass": false
+}

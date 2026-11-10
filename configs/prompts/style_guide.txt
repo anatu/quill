@@ -1,0 +1,7 @@
+Below are {n} passages by {author}. Write a one-page style guide (at most 450 words) that would let another writer reproduce this voice on any topic.
+Cover: sentence length and rhythm, paragraph shape, openings and endings, how stories and examples are used, punctuation habits, person and address, word choice, and what the author never does.
+Be concrete and give rates where they help ("most paragraphs are 1-3 sentences"). Do not quote more than five words from any passage. Do not list topics, people or companies.
+Output only the guide.
+
+PASSAGES:
+{passages}

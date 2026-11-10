@@ -1,0 +1,33 @@
+{
+ "system": "verifier-check-with-drafts",
+ "split": "dev",
+ "folds": 4,
+ "draft_mass": 900.0,
+ "generated": "2026-11-10T05:13:22",
+ "scorers": {
+  "M1 char n-grams, raw": {
+   "accept_author": 0.8831,
+   "accept_draft": 0.0617,
+   "accept_b0": 0.2436,
+   "accept_b1": 0.1081
+  },
+  "M1 masked, keep 1000": {
+   "accept_author": 0.9091,
+   "accept_draft": 0.0741,
+   "accept_b0": 0.5,
+   "accept_b1": 0.0865
+  },
+  "M2 StyleDistance, classifier": {
+   "accept_author": 0.987,
+   "accept_draft": 0.0123,
+   "accept_b0": 0.4487,
+   "accept_b1": 0.0703
+  },
+  "M3 LUAR, classifier": {
+   "accept_author": 0.974,
+   "accept_draft": 0.0988,
+   "accept_b0": 0.8141,
+   "accept_b1": 0.1946
+  }
+ }
+}

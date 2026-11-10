@@ -1,0 +1,5 @@
+Rewrite the draft below in the voice of {author}. Keep every fact, name, number, date and link. Add no new facts, names or numbers. About {words} words.
+Output only the rewritten text: no title, no preamble, no notes. Plain text with blank lines between paragraphs: no markdown, no bold.
+
+DRAFT:
+{input}

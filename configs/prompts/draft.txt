@@ -1,0 +1,6 @@
+Write this up as a helpful assistant would, from these notes. Use every fact, name, number and date. Add no new facts, names or numbers.
+About {words} words of plain prose in paragraphs. No headings, no bullet lists, no bold, no preamble, no closing remark.
+Output only the text.
+
+NOTES:
+{facts}

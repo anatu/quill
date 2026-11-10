@@ -146,5 +146,156 @@ def test_entities_catch_each_kind_of_mutation():
         assert not r["ok"] and kind in r[side], (name, r)
 
 
+def test_entities_ignore_list_marks_and_stop_at_full_stops():
+    src = "- Sam Bankman-Fried was admired.\n- Thirteen people said so.\n- Say it plainly."
+    out = "1. People admired Sam Bankman-Fried. Nobody doubted him.\n2. Say I asked 13 of them."
+    assert entities.compare(src, out)["ok"], entities.compare(src, out)
+
+
+def test_entities_ignore_item_labels_openers_and_word_order():
+    src = ("- Point 9: Lloyd Blankfein, former Goldman Sachs CEO, is worth $1 billion.\n- 14: Steve Jobs kept working.\n"
+           "- Item 3 in the list: Covid changed habits after Bryson wrote about it.")
+    out = ("Lloyd Blankfein, the former CEO of Goldman Sachs, is worth $1 billion. Same for Steve Jobs, who kept working. "
+           "After the Covid years, habits changed. Per Bryson, that was expected.")
+    assert entities.compare(src, out)["ok"], entities.compare(src, out)
+    assert not entities.compare(src, out + " Same for Elon Musk.")["ok"]
+    assert not entities.compare(src, out.replace("$1 billion", "$9 billion"))["ok"]
+
+
 def test_entities_ignore_sentence_initial_capitals():
     assert entities.compare("the market fell. people panicked.", "The market fell. People panicked. Nobody knew.")["ok"]
+
+
+# ---------------------------------------------------------------- generation, baselines
+
+def _cfg(tmp_path, claude_api=True):
+    legal = tmp_path / "legal"
+    legal.mkdir(exist_ok=True)
+    (legal / "scope.yaml").write_text(f"scope:\n  claude_api: {'yes' if claude_api else 'unknown'}\n")
+    return dict(paths=dict(legal=legal, eval=tmp_path / "eval"), author=dict(name="The Author"))
+
+
+def test_claude_calls_are_cached_per_sample_and_blocked_without_consent(tmp_path):
+    import pytest
+    from quill.gen.claude_cli import Claude, prompt
+
+    seen = []
+    c = Claude(_cfg(tmp_path), "m", workers=2, runner=lambda t, s: (seen.append(t) or f"out:{t}", 0.01))
+    assert c.map([("a",), ("b",), ("a",)]) == ["out:a", "out:b", "out:a"] and sorted(seen) == ["a", "b"]
+    assert c.ask("a", sample=1) == "out:a" and len(seen) == 3          # a new sample is a new draw
+    assert Claude(_cfg(tmp_path), "m", runner=lambda t, s: ("x", 0)).ask("a") == "out:a"   # cache survives
+    with pytest.raises(SystemExit):
+        Claude(_cfg(tmp_path, claude_api=False), "m")
+    assert "{text}" not in prompt("facts", text="a {brace} stays") and "{brace}" in prompt("facts", text="a {brace} stays")
+
+
+class _Ctx:
+    use_embeddings = True
+
+    def __init__(self):
+        from quill.scorers.lexicon import Lexicon
+        self.memo = memo.Memo(n=8)
+        self.memo.add("the highest returns tend to be one-off hits that cannot be repeated by anyone at all")
+        self.lexicon = Lexicon(dict(vocabulary=dict(words=[], phrases={}), structure={},
+                                    artifacts={"chat_opener": r"^Certainly!"}), set())
+
+    def spans(self, text, given, chunk_id=None):
+        return self.memo.longest(text, given)["span"], 0
+
+    def style_delta(self, texts):
+        return np.array([t.count("—") for t in texts], dtype=float)
+
+
+def test_rerank_gates_first_then_style():
+    from quill.eval import baselines
+
+    ctx = _Ctx()
+    given = "In 1987 Warren Buffett paid $1.2 billion for a stake in the bank and it worked out well for him."
+    good = "Buffett paid $1.2 billion in 1987 for a piece of the bank — and it worked out well for him, mostly."
+    plain = "In 1987 Buffett paid $1.2 billion for part of the bank and it worked out well for him in the end."
+    wrong = "Buffett paid $2.1 billion in 1987 — for the bank — and it — worked out well — for him, mostly, yes."
+    copied = good + " The highest returns tend to be one-off hits that cannot be repeated by anyone."
+    r = baselines.rerank(ctx, [plain, wrong, good, copied], given, words=20)
+    assert r["choice"] == 2 and not r["fallback"]
+    assert r["checks"][1]["fails"] == ["entities"] and "memorization" in r["checks"][3]["fails"]
+    r = baselines.rerank(ctx, [wrong, "Certainly! " + wrong], given, words=20)
+    assert r["fallback"] and r["choice"] == 0
+
+
+def test_exemplars_and_openings_are_stable():
+    from quill.eval import baselines
+
+    train = [dict(id=f"t{i}", bucket="150-300" if i % 2 else "300-500", words=200, text=f"text {i}") for i in range(40)]
+    row = dict(id="x#00", bucket="150-300")
+    a, b = baselines.exemplars(train, row), baselines.exemplars(train, row)
+    assert a == b and len(a) == 5 and all(c["bucket"] == "150-300" for c in a)
+    assert baselines.first_sentences("Short one. This second sentence makes it long enough to stand as an opening. Third.") \
+        == "Short one. This second sentence makes it long enough to stand as an opening."
+
+
+def test_content_mask_keeps_function_words_and_punctuation():
+    from quill.scorers import av
+
+    keep = av.frequent_words(["the cat and the dog. the end, and so on"], 3)
+    assert keep == {"the", "and", "cat"} or {"the", "and"} <= keep
+    assert av.mask("The Buffett rule — and 1,200 dollars, the end.", frozenset({"the", "and"})) == "The * * — and 0 *, the *."
+
+
+def test_entities_ner_keeps_sentence_initial_name_and_mutations_fail():
+    from quill.scorers import entities
+
+    src = "Buffett bought the stock in 1988. He paid $1 billion. Coca-Cola then tripled."
+    assert entities.compare(src, "In 1988 the stock was bought by Buffett for $1 billion. Coca-Cola then tripled.")["ok"]
+    r = entities.compare(src, "Soros bought the stock in 1988. He paid $1 billion. Coca-Cola then tripled.")
+    assert not r["ok"] and "buffett" in r["missing"]["names"]
+    assert not entities.compare(src, src.replace("1988", "1989"))["ok"]
+    assert not entities.compare(src, src.replace("$1 billion", "$2 billion"))["ok"]
+    assert not entities.compare(src, src + " Read more at https://example.com/x")["ok"]
+
+
+def test_blind_kit_matches_length_records_answers_and_reports(tmp_path):
+    from quill.eval import blind
+
+    cfg = {"paths": {"eval": str(tmp_path)}}
+    para = "One short sentence here. Another one follows it now. A third closes the paragraph."
+    chunks = [dict(id=f"t{i}", split="test", post=f"p{i}", text="\n\n".join([para] * 6)) for i in range(5)]
+    chunks += [dict(id="r0", split="train", post="q", text=para)]
+    outs = {"sys": {f"t{i}": "\n\n".join(["It’s  “fine”. Really it is."] * 4) for i in range(5)}}
+    kit = blind.make(cfg, "A", "sys", "test", n=4, chunks=chunks, outputs=outs)
+    assert kit["n"] == 4 and blind.make(cfg, "A", "sys", "test", n=9)["n"] == 4      # frozen once built
+    it = kit["items"][0]
+    assert abs(len(it["first"].split()) - len(it["second"].split())) <= 14 and "“" not in it["first"] + it["second"]
+    said = iter([str(i["truth"]) if k < 3 else str(3 - i["truth"]) for k, i in enumerate(kit["items"]) for _ in (0,)])
+    script = iter(x for i in kit["items"] for x in (next(said), "rhythm", "n"))
+    blind.session(cfg, kit, ask=lambda _: next(script), show=lambda *_: None)
+    r = blind.report(cfg, kit)
+    assert (r["answered"], r["hits"], r["recognized"]) == (4, 3, 0) and r["p_one_sided"] == 0.3125
+    assert blind.binom_p(26, 40) < 0.05 < blind.binom_p(25, 40)
+
+
+def test_judge_counts_only_consistent_picks():
+    from quill.eval import judge
+
+    class Fake:
+        def map(self, jobs):
+            return ["A", "B", "A", "A", "B", "A"]
+
+    assert judge.ask(Fake(), [("r", "x", "y")] * 3) == [1, 0, -1]
+
+
+def test_composite_applies_gate_and_paired_bootstrap():
+    from quill.eval import harness
+
+    good = [dict(id=f"c{i}", gate=True, m1=0.8, m15=0.8, m4=0.8) for i in range(20)]
+    bad = [dict(r, gate=i % 2 == 0, m1=0.2) for i, r in enumerate(good)]
+    assert abs(harness.composite(good) - 0.8) < 1e-9
+    assert abs(harness.composite(bad) - 0.5 * (0.2 * 0.8 * 0.8) ** (1 / 3)) < 1e-9
+    d = harness.bootstrap(good, bad, n=200)
+    assert d["ci95"][0] > 0 and d["chunks"] == 20
+
+
+def test_entities_common_word_at_sentence_start_is_not_a_name():
+    from quill.scorers import entities
+
+    entities.set_common(["a bit of luck and vanity"])
+    assert entities.compare("People get lucky. It matters a lot.", "Luck matters. Vanity does not help people.")["ok"]

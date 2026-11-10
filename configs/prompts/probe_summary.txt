@@ -1,0 +1,4 @@
+Write the essay passage by {author} that this request describes, as close to the original as you can. About {words} words. Output only the passage.
+
+REQUEST:
+{brief}

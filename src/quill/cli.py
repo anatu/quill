@@ -79,7 +79,7 @@ def _spotcheck(args) -> int:
 
     cfg = config.load(args.config)
     if args.record is not None:
-        gate.record(cfg, args.record)
+        gate.record(cfg, args.record, args.note or "")
         print(f"recorded {args.record} bad chunks")
         return 0
     r = gate.spotcheck(cfg, n=args.n, seed=args.seed)
@@ -119,7 +119,35 @@ def _eval(args) -> int:
     from .eval import harness
 
     cfg = config.load(args.config)
-    if args.sanity:
+    if args.compare:
+        r = harness.compare(cfg, args.compare[0], args.compare[1], args.split)
+        d = r["diff"]
+        print(f"composite {r['a']} - {r['b']} on {args.split}: {d['value']:+.4f}  95% CI [{d['ci95'][0]:+.4f}, {d['ci95'][1]:+.4f}]  "
+              f"chunks {d['chunks']}  axes {r['axes']}")
+        return 0
+    if args.report:
+        r = harness.baseline_report(cfg, args.split)
+        bad = [g["check"] for g in r["exit_gate"] if not g["ok"]]
+        print(f"Phase 2 exit gate: {'passes' if not bad else 'FAIL ' + '; '.join(bad)}")
+        print(f"wrote {r['_out']}")
+        return 0
+    if args.detector:
+        from .eval import vcheck
+
+        r = vcheck.detector(cfg, args.split)
+        print(f"M10 {'passes' if r['pass'] else 'FAILS'}: " + "  ".join(f"{k} AUC {v['auc']}" for k, v in r["sets"].items() if v["auc"]))
+        print(f"wrote {r['_out']}")
+        return 0
+    if args.verifiers:
+        from .eval import vcheck
+
+        r = vcheck.run(cfg, args.split)
+        for n, x in r["scorers"].items():
+            print(f"{n:32s} AUC impostors {x['auc_impostor']:.3f}  drafts {x['auc_draft']:.3f}  "
+                  f"accept author {x['accept_author']:.1%}  drafts {x['accept_draft']:.1%}")
+        for n, x in vcheck.with_drafts(cfg, args.split)["scorers"].items():
+            print(f"with draft negatives: {n:32s} accept author {x['accept_author']:.1%}  drafts {x['accept_draft']:.1%}")
+    elif args.sanity:
         r = harness.run_sanity(cfg, use_embeddings=not args.no_embed)
         bad = [k for k, v in r["sanity"].items() if isinstance(v, dict) and v.get("pass") is False]
         print(f"sanity: {'all metrics pass' if not bad else 'FAIL ' + ', '.join(bad)}")
@@ -131,6 +159,74 @@ def _eval(args) -> int:
         s = r["scores"]
         print(f"{args.system} on {args.split}: M1 accept {s['M1_av']['accept_rate']:.1%}  "
               f"M15 author {s['M15_attribution'].get('author', 0):.1%}  tic max |z| {s['M6_tic_profile'].get('max_abs_z')}")
+    print(f"wrote {r['_out']}")
+    return 0
+
+
+def _inputs(args) -> int:
+    from .eval import inputs
+
+    if args.train_drafts:
+        r = inputs.make_train_drafts(config.load(args.config))
+        print(f"train drafts {r['n']}  new calls {r['new_calls']}  cost ${r['cost_usd']}  {r['file']}")
+        return 0
+    r = inputs.make(config.load(args.config), force=args.force)
+    print(("froze" if r["created"] else "frozen") + f" eval inputs at {r['dir']} ({r['frozen']})  hash {r['hash'][:12]}")
+    print(f"chunks {r['n']}  facts and briefs by {r['util_model']}  drafts by {r['draft_model']}  "
+          f"draft/target words {r['draft_to_target_words']}")
+    return 0
+
+
+def _baseline(args) -> int:
+    from .eval import baselines, harness
+
+    cfg = config.load(args.config)
+    r = baselines.run(cfg, args.name, args.split, n=args.n)
+    print({k: v for k, v in r.items() if k != "items"})
+    if args.split == "coverage":
+        from .eval import coverage
+
+        rep = coverage.run(cfg, args.name)
+        print(f"{args.name} on coverage: {rep['briefs']} briefs  topic drift {rep['topic_drift']}")
+        print(f"wrote {rep['_out']}")
+        return 0
+    rep = harness.run(cfg, args.name, args.split)
+    s = rep["scores"]
+    print(f"{args.name} on {args.split}: M1 accept {s['M1_av']['accept_rate']:.1%}  "
+          f"tic max |z| {s['M6_tic_profile'].get('max_abs_z')}  fallback {s.get('fallback_rate')}")
+    print(f"wrote {rep['_out']}")
+    return 0
+
+
+def _blind(args) -> int:
+    from .eval import blind
+
+    cfg = config.load(args.config)
+    kit = blind.make(cfg, args.test, args.system, args.split, n=args.n, baseline=args.baseline, op=args.op, seed=args.seed)
+    if not args.report:
+        blind.session(cfg, kit)
+    r = blind.report(cfg, kit)
+    print({k: v for k, v in r.items() if k != "reasons"})
+    return 0
+
+
+def _judge(args) -> int:
+    from .eval import judge
+
+    r = judge.run(config.load(args.config), args.split, n=args.n)
+    v = r["validation_real_vs_impostor"]
+    print(f"judge validation: real over impostor {v['x_share']:.1%} ({'pass' if r['pass'] else 'FAIL'})  cost ${r['cost_usd']}")
+    print(f"wrote {r['_out']}")
+    return 0
+
+
+def _recall(args) -> int:
+    from .eval import baselines
+
+    r = baselines.recall_probe(config.load(args.config), args.split)
+    print(f"{r['model']} on {args.split}: {r['prompts']} prompts  max span {r['max_span']} words  "
+          f"at or over {r['gate_words']}: {r['flagged']}")
+    print(f"by prompt: {r['by_kind']}")
     print(f"wrote {r['_out']}")
     return 0
 
@@ -156,6 +252,7 @@ def main(argv: list[str] | None = None) -> int:
     a.add_argument("--n", type=int, default=100)
     a.add_argument("--seed", type=int, default=1)
     a.add_argument("--record", type=int, metavar="BAD", help="number of bad chunks found in the sample")
+    a.add_argument("--note", help="who read the sample, and anything the count needs explained")
     a.set_defaults(fn=_spotcheck)
     a = sub.add_parser("split", help="freeze topic-disjoint train/dev/test splits, or show the frozen ones")
     a.add_argument("--force", action="store_true", help="re-cluster and overwrite the frozen split")
@@ -163,9 +260,39 @@ def main(argv: list[str] | None = None) -> int:
     a = sub.add_parser("eval", help="score a system on dev or test, or run the metric sanity check")
     a.add_argument("--system", help="human, impostor, llm, or a name under <eval>/outputs/")
     a.add_argument("--split", choices=["dev", "test"], default="dev")
+    a.add_argument("--compare", nargs=2, metavar=("A", "B"), help="paired bootstrap of the composite, A minus B")
+    a.add_argument("--report", action="store_true", help="write the Phase 2 exit report, eval_reports/baseline-v2")
+    a.add_argument("--detector", action="store_true", help="M10 sanity: Fast-DetectGPT on author text vs system outputs")
+    a.add_argument("--verifiers", action="store_true", help="compare style scorers on author text vs plain drafts")
     a.add_argument("--sanity", action="store_true", help="metric sanity check and within-author ceiling on dev")
     a.add_argument("--no-embed", action="store_true", help="skip StyleDistance (M2)")
     a.set_defaults(fn=_eval)
+    a = sub.add_parser("inputs", help="make and freeze the eval inputs (facts, briefs, generic drafts) with Claude")
+    a.add_argument("--force", action="store_true", help="regenerate and overwrite the frozen inputs")
+    a.add_argument("--train-drafts", action="store_true", help="facts and drafts for train chunks: verifier negatives")
+    a.set_defaults(fn=_inputs)
+    a = sub.add_parser("baseline", help="run a baseline (b0 Claude, b1 local base, b2 the input) and score it")
+    a.add_argument("name", choices=["b0", "b1", "b2"])
+    a.add_argument("--split", choices=["dev", "test"], default="dev")
+    a.add_argument("--n", type=int, default=4, help="candidates per input")
+    a.set_defaults(fn=_baseline)
+    a = sub.add_parser("blind", help="blind reading test: build the kit, read it in the terminal, report the binomial p")
+    a.add_argument("--test", choices=("A", "R"), required=True, help="A: real vs system. R: system vs baseline against a reference")
+    a.add_argument("--system", required=True)
+    a.add_argument("--baseline", default="b0")
+    a.add_argument("--split", default="test", choices=("dev", "test"))
+    a.add_argument("--op", default="restyle", choices=("restyle", "write"))
+    a.add_argument("--n", type=int, default=40)
+    a.add_argument("--seed", type=int, default=0)
+    a.add_argument("--report", action="store_true", help="show the result so far without reading")
+    a.set_defaults(fn=_blind)
+    a = sub.add_parser("judge", help="M11: validate the Claude judge on dev and compare the scored systems")
+    a.add_argument("--split", default="dev", choices=("dev", "test"))
+    a.add_argument("--n", type=int, default=40)
+    a.set_defaults(fn=_judge)
+    a = sub.add_parser("recall", help="recall probe: longest verbatim spans from the untuned local base")
+    a.add_argument("--split", choices=["dev", "test"], default="dev")
+    a.set_defaults(fn=_recall)
     a = sub.add_parser("gate", help="show the Phase 1 exit gate")
     a.set_defaults(fn=_gate)
     args = ap.parse_args(argv)

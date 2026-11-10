@@ -1,0 +1,38 @@
+{
+ "system": "judge",
+ "split": "dev",
+ "model": "claude-sonnet-5-5",
+ "generated": "2026-11-10T09:14:11",
+ "bar": 0.75,
+ "validation_real_vs_impostor": {
+  "pairs": 40,
+  "x_wins": 40,
+  "y_wins": 0,
+  "inconsistent": 0,
+  "x_share": 1.0
+ },
+ "pass": true,
+ "real_vs_b0": {
+  "pairs": 40,
+  "x_wins": 32,
+  "y_wins": 1,
+  "inconsistent": 7,
+  "x_share": 0.8
+ },
+ "real_vs_b1": {
+  "pairs": 40,
+  "x_wins": 40,
+  "y_wins": 0,
+  "inconsistent": 0,
+  "x_share": 1.0
+ },
+ "b0_vs_b1": {
+  "pairs": 40,
+  "x_wins": 40,
+  "y_wins": 0,
+  "inconsistent": 0,
+  "x_share": 1.0
+ },
+ "new_calls": 320,
+ "cost_usd": 3.08
+}

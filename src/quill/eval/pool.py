@@ -54,3 +54,9 @@ def impostors(cfg: dict) -> list[dict]:
             out.append(dict(author=a, kind="llm" if a in LLM else "human", group=g, part=part_of(g),
                             text="\n\n".join(r["paras"])))
     return out
+
+
+def m15_class(p: dict) -> str:
+    """M15 classes: the author (added by the caller), Lamade, other human writers, LLM. Farnam
+    Street and Naval have too little cached text for classes of their own, so they join `other`."""
+    return "llm" if p["kind"] == "llm" else "lamade" if p["author"] == "lamade" else "other"

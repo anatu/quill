@@ -64,8 +64,8 @@ def chunk_post(blocks: list[dict], key: str = "", lo: int = 150, hi: int = 800,
                targets: list[int] | None = None, markers: dict | None = None) -> list[dict]:
     """Return chunks: text, words, bucket, flags (list), n_paras.
 
-    markers, e.g. {"quote": "<QUOTE>", "media": "<IMAGE>"}, puts a line where a block quote or an
-    image was removed. Off by default: the text is then the author's words only.
+    text is the author's words only. markers, e.g. {"quote": "<QUOTE>", "media": "<IMAGE>"}, adds
+    text_marked: the same text with a line where a block quote or an image was removed.
     """
     targets = targets or TARGETS
     paras = [x for b in blocks for x in _split_long(b, hard=min(500, hi), piece=350)]
@@ -131,6 +131,9 @@ def chunk_post(blocks: list[dict], key: str = "", lo: int = 150, hi: int = 800,
             flags.append("dangling_leadin")
         if any("<CODE>" in paras[i]["text"] for i in g):
             flags.append("code")
-        out.append(dict(text="\n\n".join(_with_markers(i, paras, markers) for i in g), words=words, bucket=bucket(words),
-                        flags=flags, n_paras=len(g)))
+        k = dict(text="\n\n".join(render(paras[i]) for i in g), words=words, bucket=bucket(words),
+                 flags=flags, n_paras=len(g))
+        if markers:
+            k["text_marked"] = "\n\n".join(_with_markers(i, paras, markers) for i in g)
+        out.append(k)
     return out

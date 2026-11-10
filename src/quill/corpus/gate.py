@@ -60,12 +60,12 @@ def spotcheck(cfg: dict, n: int = 100, seed: int = 1) -> dict:
     return res
 
 
-def record(cfg: dict, bad: int) -> None:
+def record(cfg: dict, bad: int, note: str = "") -> None:
     db = store.connect(store.db_path(cfg))
     s = store.get_meta(db, "spotcheck")
     if not s:
         raise SystemExit("run `quill spotcheck` first")
-    s["recorded"] = dict(bad=bad, date=time.strftime("%Y-%m-%d"))
+    s["recorded"] = dict(bad=bad, date=time.strftime("%Y-%m-%d"), note=note)
     store.set_meta(db, "spotcheck", s)
     db.close()
 
@@ -86,7 +86,7 @@ def status(cfg: dict) -> list[dict]:
     checks = [
         dict(name="spot check: at most 3 bad chunks in 100",
              ok=None if not rec else rec["bad"] * 100 <= 3 * s["n"],
-             detail=f"{rec['bad']} bad of {s['n']} ({rec['date']})" if rec else
+             detail=f"{rec['bad']} bad of {s['n']} ({rec['date']})" + (f"; {rec['note']}" if rec.get("note") else "") if rec else
              ("sample written; read it and record the count" if s else "run `quill spotcheck`")),
         dict(name="word count matches Phase 0 or the difference is explained", ok=True,
              detail=f"{b['words']:,} vs {b['phase0_words']:,} ({b['word_delta']:+,}); reconciled in cleaning_report.md"),

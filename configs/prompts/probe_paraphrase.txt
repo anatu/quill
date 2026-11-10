@@ -1,0 +1,4 @@
+The text below is a neutral paraphrase of a passage by {author}. Give the original passage, as close to word for word as you can. Output only the passage.
+
+PARAPHRASE:
+{input}

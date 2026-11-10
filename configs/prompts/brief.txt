@@ -1,0 +1,5 @@
+Below is a passage. Write the request a person would type to get this passage written: the topic and the point to make, in 1-3 sentences and at most 45 words. Do not quote the passage, list its examples or describe its style.
+Output only the request.
+
+PASSAGE:
+{text}

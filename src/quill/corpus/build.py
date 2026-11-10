@@ -44,7 +44,7 @@ def build(cfg: dict, raw: Path | None = None) -> dict:
         p["consent_ref"] = consent_ref
         p["tags"] = list(tag_cfg.get(p["slug"], []))
         p["kept"], p["drop_reason"] = True, None
-        p["blocks"], p["dropped"] = boilerplate.clean_post(p["blocks"])
+        p["blocks"], p["dropped"] = boilerplate.clean_post(p["blocks"], quotes=(c.get("unmarked_quotes") or {}).get(p["slug"], ()))
         if (p["author"] or "") != cfg["author"]["name"]:
             p["kept"], p["drop_reason"] = False, "other_author"
         elif p["slug"] in drop_cfg:

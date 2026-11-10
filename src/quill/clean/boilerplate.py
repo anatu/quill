@@ -8,8 +8,8 @@ from __future__ import annotations
 import re
 from collections import Counter
 
-FOOTNOTE = re.compile(r"\[\d+\]|\[[a-z]\]")
-RELATED_MARK = re.compile(r"^(more on this topic|related (posts|reading)|further reading|you may also like)\s*:?\s*$",
+FOOTNOTE = re.compile(r"\[\d+\]")          # "[x]" is a placeholder in the text and stays
+RELATED_MARK = re.compile(r"^((a little )?more on this topic|for more|more|related (posts|reading)|further reading|you may also like)\s*:?\s*$",
                           re.I)
 # A promo is a short line that sells; a mention inside a sentence ("...in my book, X.") is not.
 PROMO = re.compile(
@@ -17,6 +17,8 @@ PROMO = re.compile(
     r"|^my (new |latest )?book,?.{0,80}\b(is (now |finally )?(out|available|here)|comes out|is out now)\b"
     r"|^for more, check out my book\b"
     r"|^\(?click here\b"
+    r"|^you can download the (report|pdf)\b"
+    r"|\bteam members own shares in\b"
     r"|^\(?pdf version here\)?\.?$"
     r"|^(subscribe|sign up)\b.{0,60}$"
     r"|^copy link$", re.I)
@@ -24,6 +26,7 @@ BYLINE = re.compile(r"^(by\s+)?morgan housel\s*$|^@morganhousel\s*$", re.I)
 CAPTION = re.compile(r"^(source|sources|chart|image|photo|credit)s?\s*:", re.I)
 ATTRIBUTION = re.compile(r"^\s*[-–—―]{1,2}\s*\S")          # "– Voltaire" under a quote
 SEPARATOR = re.compile(r"^[\s*\-–—_~•·#.]+$")            # "***", "—"; a bare "80%?" is text and stays
+EPIGRAPH_TAIL = re.compile(r"[.!?”\"]\s*[–—―]\s?[A-Z][\w.’']+(?:\s+[A-Z][\w.’']+){0,3}$")
 MAX_QUOTE_PARAS = 8
 OPEN_Q, CLOSE_Q = "“\"", "”\""
 QUOTE_TAIL = re.compile(r"[”\"]\s*(?:[-–—―]{1,2}\s*[^“”\"]{2,80})?$")
@@ -49,9 +52,12 @@ def _linky(b: dict, share: float = 0.6, words: int = 40) -> bool:
     return b["kind"] != "media" and b["link_share"] > share and len(b["text"].split()) < words
 
 
-def clean_post(blocks: list[dict]) -> tuple[list[dict], list[dict]]:
+def clean_post(blocks: list[dict], quotes: list[str] = ()) -> tuple[list[dict], list[dict]]:
     """Return (kept, dropped). Kept blocks: text, kind, n, and gaps when a quote or an image
-    was removed right after the block. Dropped blocks carry a reason."""
+    was removed right after the block. Dropped blocks carry a reason.
+
+    quotes: opening words of paragraphs that are quotations with no markup and no quote marks
+    (corpus.unmarked_quotes). They go as inline_quote."""
     kept, dropped = [], []
 
     def drop(b, reason):
@@ -95,13 +101,28 @@ def clean_post(blocks: list[dict]) -> tuple[list[dict], list[dict]]:
             if not (u.startswith("“") and "”" not in u):
                 break                    # not a continuation paragraph: leave the run alone
 
+    in_quote.update(i for i, b in enumerate(blocks) if quotes and b["text"].strip().startswith(tuple(quotes)))
+
+    # 4. epigraphs: "- Name" under a short quotation of any length, or under the post's opening paragraph
+    body = [i for i, b in enumerate(blocks) if b["kind"] != "media" and b["text"].strip()]
+    for k in range(1, len(body)):
+        i, t = body[k - 1], blocks[body[k]]["text"].strip()
+        if blocks[body[k]]["kind"] != "p" or not ATTRIBUTION.match(t) or len(t.split()) >= 12:
+            continue
+        u = blocks[i]["text"].strip()
+        quoted = u[:1] in OPEN_Q and u[-1:] in CLOSE_Q and sum(u.count(c) for c in "“\"") <= 2
+        if not blocks[i]["bq"] and i not in in_quote and (quoted or k == 1):
+            in_quote.add(i)
+
+    if body and EPIGRAPH_TAIL.search(blocks[body[0]]["text"].strip()) and len(blocks[body[0]]["text"].split()) < 60:
+        in_quote.add(body[0])            # one-paragraph epigraph: "A line. —Name"
+
     prev_quote = False
     for i, b in enumerate(blocks):
         text = re.sub(r"\s+", " ", FOOTNOTE.sub("", b["text"])).strip()
         b = dict(b, text=text)
         if b["kind"] == "media":
-            if not b["bq"]:
-                gap("media")
+            gap("quote" if b["bq"] else "media")      # an embedded tweet is a quote
             continue
         was_quote, prev_quote = prev_quote, False
         if not text:

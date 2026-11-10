@@ -25,4 +25,5 @@ Tests: `tests/test_phase1.py`. Settings: `configs/quill.yaml`.
 - Case 5: still dropped under 120 words. "The Limits of Investing Sanity" is an image post.
 - Case 6: chunks carry the `satire` flag. Case 7: kept. Case 8: handled by the related-links rule.
 - Case 9: `clean.twins.split_groups` puts the 4 multi-overlap posts with their sources (4 groups; the largest has 14 posts).
-- New: 4 interviews and 1 podcast transcript dropped; whole-paragraph quotations dropped; quote and image gaps flagged on chunks.
+- New: 5 interviews and 1 podcast transcript dropped; whole-paragraph quotations dropped; quote and image gaps flagged on chunks.
+- Spot check (2 samples of 100): epigraphs with a "– Name" line or tail, embedded tweets, "More:" and "For more:" link labels, a disclosure line, a "download the report here" line, and unmarked quotations after "X explained:" (config list). A literal "[x]" is text, not a footnote.
