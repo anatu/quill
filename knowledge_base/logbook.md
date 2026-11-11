@@ -4,6 +4,39 @@ One entry per experiment or finding, newest first. Each entry says what was run,
 
 ---
 
+## 2026-11-11: Entity failures come from the drafter; a draft retry fixes most
+
+**Phase 4.** Report: `eval_reports/sft-v1-s1p-n4r-dev.md`.
+
+Diagnosis on the N=4 run of `sft-v1-s1p`:
+
+| | Restyle | Write |
+|---|---|---|
+| Candidates failing the entity check | 19 of 248 | 164 of 248 |
+| Inputs with all 4 candidates failing | 0 of 62 | 38 of 62 |
+
+- In `write`, the untuned base drafts from the brief and facts, and the adapter restyles the draft. 41 of 62 drafts already drop or add an item against the brief. Only 9 of the 164 failing write candidates fail against their own draft. The adapter keeps what it is given.
+- Lost items: 225 numbers, 165 names.
+
+Fix: `baselines.plain_draft`. A draft with entity errors is redrafted by the base with the lost and added items named (`configs/prompts/draft_fix.txt`); the draft with the fewest errors is kept. The adapter's prompt is untouched. Failing drafts: 41 → 18 with 2 retries, → 10 with 4.
+
+| Dev, N=4 | no draft retry | draft retry (4) |
+|---|---|---|
+| Composite (95% CI) | 0.508 [0.44, 0.57] | 0.681 [0.61, 0.74] |
+| M1 accept (restyle / write) | 76.1% (67.5 / 85.3) | 72.4% (67.5 / 77.6) |
+| M15 author / LLM | 68.4% / 16.8% | 62.8% / 23.7% |
+| M4 meaning (write facts entailed) | 0.848 (77.7%) | 0.889 (85.9%) |
+| M5 entity pass | 70.2% | 92.7% |
+| Fallback (H9 limit 15%) | 29.8% | 10.5% |
+| M9 flagged | 1 | 0 |
+
+- Paired: +0.173 [+0.119, +0.229] over the run without retry; +0.425 [+0.331, +0.523] over Qwen3-8B B1.
+- All 13 remaining fallbacks are in `write`; restyle has none.
+- The composite applies the entity gate first, so most of this gain is outputs that now pass the gate, not better style. Write-op M1 fell from 85.3% to 77.6%: fuller drafts are harder to restyle. B0 and B1 got no draft retry, so the comparison with them now favours the adapter pipeline.
+- Rebuilt spans against the held-out target rose to 61 of 124 outputs (reported, not gated).
+
+---
+
 ## 2026-11-11: N=4 rerank, the adapter's recall probe, and fused speed
 
 **Phase 4.** Reports: `eval_reports/sft-v1-s1p-n4-dev.md`, `recall-probe-sft-v1-s1p-dev.md`.

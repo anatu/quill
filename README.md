@@ -142,7 +142,7 @@ Some results worth knowing:
 | ✓ | 1 Extraction and cleaning | Done. 330 posts, 318,971 words, 835 chunks |
 | ✓ | 2 Splits, eval harness, baselines | Done on dev. Exit gate passes |
 | ✓ | 3 Training pairs | Done. 675 paraphrase pairs and 641 draft pairs survive curation; 92.6% of train chunks keep both ([report](eval_reports/pairs-v1.md)). A human read of 50 pairs is still open |
-| ● | 4 Model bake-off | In progress. Base is Qwen3-8B ([why](knowledge_base/logbook.md)). The stage-1 adapter scores 0.51 on the dev composite against 0.26 for the untuned base and 0.25 for prompted Opus. Open: a third of outputs still drop or add a name or number |
+| ● | 4 Model bake-off | In progress. Base is Qwen3-8B ([why](knowledge_base/logbook.md)). The stage-1 adapter pipeline scores 0.68 on the dev composite against 0.26 for the untuned base and 0.25 for prompted Opus; fallback is 10.5% |
 | | 5 Style fine-tune and ablations | |
 | | 6 Inference pipeline | |
 | | 8 Ship gate | Blind reads on the untouched test split |

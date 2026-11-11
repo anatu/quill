@@ -133,8 +133,42 @@ def _pick(cfg: dict, jobs: list[dict], texts: list[str], n: int, gen, ctx=None) 
 MARKER_LINE = __import__("re").compile(r"(?m)^<(?:QUOTE|IMAGE)>\s*$\n?")
 
 
+def _entity_errors(given: str, text: str) -> int:
+    e = entities.compare(given, text)
+    return sum(map(len, e["missing"].values())) + sum(map(len, e["added"].values()))
+
+
+def plain_draft(base, r: dict, retries: int = 2) -> tuple[str, int]:
+    """The untuned base drafts from the brief and facts. A draft that drops or adds a name, number
+    or date is redrafted with those items named; the draft with the fewest errors is kept.
+    Returns (draft, attempts)."""
+    from ..pairs.curate import lost_items
+
+    given, limit = inputs.write_input(r), int(r["words"] * 2.2) + 150
+    user = prompt("write_draft", words=r["words"], brief=r["brief"], facts=r["facts"])
+    best, errs, ask = base.ask(user, None, 0, limit), None, user
+    errs = _entity_errors(given, best)
+    tries, last = 1, best
+    while errs and tries <= retries:
+        e = entities.compare(given, last)
+        lost = lost_items(last, given) or [x for v in e["missing"].values() for x in v]
+        extra = [x for v in e["added"].values() for x in v]
+        note = prompt("draft_fix",
+                      missing="These items from the notes must appear, written exactly as shown:\n"
+                              + "\n".join(f"- {x}" for x in lost) + "\n" if lost else "",
+                      added="These are not in the notes and must not appear: " + ", ".join(extra) + "\n" if extra else "")
+        head, sep, tail = user.partition("\n\nREQUEST:")
+        ask = head + "\n\n" + note.strip() + sep + tail
+        last = base.ask(ask, None, tries, limit)
+        tries += 1
+        n = _entity_errors(given, last)
+        if n < errs:
+            best, errs = last, n
+    return best, tries
+
+
 def run_adapter(cfg: dict, name: str, adapter: str, part: str = "dev", n: int = 1, tag: str = "draft", ctx=None,
-                limit: int | None = None, ops=OPS) -> dict:
+                limit: int | None = None, ops=OPS, draft_retries: int = 4) -> dict:
     """Score a trained adapter the way the pipeline will use it. `restyle` gives it the eval draft.
     `write` has the untuned base draft plainly from the brief and facts, then restyles that; the
     output is still checked against the brief and facts. `tag` is the template's input field: an
@@ -147,9 +181,9 @@ def run_adapter(cfg: dict, name: str, adapter: str, part: str = "dev", n: int = 
     plain = {}
     if "write" in ops:
         base = Local(cfg)
-        outs = base.map([(prompt("write_draft", words=r["words"], brief=r["brief"], facts=r["facts"]), None, 0,
-                          int(r["words"] * 2.2) + 150) for r in rows])
-        plain = {r["id"]: o for r, o in zip(rows, outs)}
+        tries = {}
+        for r in rows:
+            plain[r["id"]], tries[r["id"]] = plain_draft(base, r, draft_retries)
         base.unload()
     gen = Local(cfg, adapter=adapter_dir(cfg, adapter))
     jobs = []
@@ -163,6 +197,10 @@ def run_adapter(cfg: dict, name: str, adapter: str, part: str = "dev", n: int = 
     texts = [MARKER_LINE.sub("", t).strip() for t in texts]
     items, stats = _pick(cfg, jobs, texts, n, gen, ctx)
     stats.update(adapter=adapter, tag=tag)
+    if "write" in ops:
+        given = {r["id"]: inputs.write_input(r) for r in rows}
+        stats.update(draft_retries=draft_retries, drafts_redrafted=sum(t > 1 for t in tries.values()),
+                     drafts_failing=sum(1 for i, d in plain.items() if _entity_errors(given[i], d)))
     out_dir = Path(cfg["paths"]["eval"]) / "outputs" / name
     if limit is None:
         out_dir.mkdir(parents=True, exist_ok=True)

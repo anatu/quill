@@ -225,3 +225,30 @@ def test_closure_allows_a_change_of_form(inp, target):
 ])
 def test_closure_still_catches_a_missing_fact(inp, target, kind):
     assert kind in C.closure(inp, target)
+
+
+# ---------------------------------------------------------------- draft retry
+
+class _Base:
+    def __init__(self, outs):
+        self.outs, self.asked = list(outs), []
+
+    def ask(self, user, system=None, sample=0, max_tokens=0):
+        self.asked.append((user, sample))
+        return self.outs[len(self.asked) - 1]
+
+
+def test_plain_draft_redrafts_with_lost_items_and_keeps_the_best():
+    from quill.eval import baselines
+
+    r = dict(words=20, brief="Write about Dana Whitlock's bakery.", facts="- Dana Whitlock opened the bakery in 1987.\n- It sold 4,200 loaves a week.")
+    good = "Dana Whitlock opened the bakery in 1987. It sold 4,200 loaves a week."
+    base = _Base(["A bakery opened long ago and sold many loaves.", good])
+    d, tries = baselines.plain_draft(base, r, retries=2)
+    assert d == good and tries == 2 and len(base.asked) == 2
+    assert "1987" in base.asked[1][0] and "REQUEST:" in base.asked[1][0] and base.asked[1][1] == 1
+    base = _Base([good])
+    assert baselines.plain_draft(base, r) == (good, 1)                                  # a clean draft is not retried
+    worse = "A bakery sold loaves."
+    base = _Base(["Dana Whitlock opened the bakery in 1987.", worse, worse])
+    assert baselines.plain_draft(base, r, retries=2)[0].startswith("Dana Whitlock")     # fewest errors wins
