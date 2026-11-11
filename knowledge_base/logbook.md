@@ -4,6 +4,25 @@ One entry per experiment or finding, newest first. Each entry says what was run,
 
 ---
 
+## 2026-11-11: Fusing into 4-bit erases the adapter; a 6-bit fused copy holds style at 30 tok/s
+
+**Phase 4.** Reports: `eval_reports/sft-v1-s1p-fused-n4-dev.md`, `sft-v1-s1p-fused8-dev.md`, `sft-v1-s1p-fused6-dev.md`. All runs use the draft retry. `quill run --fused PATH` generates from a merged model.
+
+| `sft-v1-s1p` on dev | Candidates | Composite | M1 accept | M15 author / LLM | Tok/s (run overall) | Peak GB |
+|---|---|---|---|---|---|---|
+| Adapter loaded on the 4-bit base | 4 | 0.681 | 72.4% | 62.8% / 23.7% | 26.7 | 6.1 |
+| Fused, re-quantized to 4-bit (`mlx_lm fuse`) | 4 | 0.098 | 7.7% | 3.9% / 84.6% | 42.4 | 5.4 |
+| Fused with `--dequantize`, then 8-bit | 1 | 0.587 | 68.2% | 59.7% / 24.0% | 27.2 | 9.5 |
+| Fused with `--dequantize`, then 6-bit | 1 | 0.655 | 78.6% | 66.9% / 20.1% | 30.2 | 7.4 |
+
+- **The 4-bit fused copy scores like the untuned base** (paired −0.583 [−0.682, −0.508] against the loaded adapter). Likely cause: re-quantizing to 4 bits rounds away the LoRA delta. Not checked at the weight level; the 8-bit and 6-bit results fit it.
+- **This voids the earlier fused-speed entry** (50.5 tok/s): that copy no longer carried the adapter.
+- 8-bit keeps the style but is no faster than the loaded adapter and takes 9.5 GB.
+- **6-bit keeps the style and reaches 30.2 tok/s** over the whole run, 7.4 GB peak, 6.2 GB on disk. 6-bit minus 8-bit: +0.068 [+0.009, +0.128], so no sign of loss. The speed gate (30) passes by a hair; it is not a comfortable margin.
+- The 6-bit copy has not been run at N=4, and the recall probe has not been run on it.
+
+---
+
 ## 2026-11-11: Entity failures come from the drafter; a draft retry fixes most
 
 **Phase 4.** Report: `eval_reports/sft-v1-s1p-n4r-dev.md`.
@@ -53,7 +72,7 @@ Fix: `baselines.plain_draft`. A draft with entity errors is redrafted by the bas
 - The same effect shows in M9 `target_rebuilt`: 53 of 124 outputs share an 8+ word span with the held-out target (B1: 10).
 - **Decision (user, 2026-11-11): do not count it.** The probe now splits each span as M9 does: recall (corpus outside the item's own post, gated) and rebuilt (the item's own post, reported). Rescored from the cache: adapter recall 3 prompts at or over the gate, max 9 words; untuned base 4, max 9. H8's probe half passes. Rebuilt: adapter 32 prompts (31 on the paraphrase arm, max 15); base 2. The probe files no longer store span text.
 
-**Decode speed.** Five dev restyle inputs, temp 0.7. Adapter loaded unfused: 28.4 tok/s. Fused with `mlx_lm fuse` into a local 4-bit copy: 50.5 tok/s, peak 5.32 GB. Untuned base: 50.7 tok/s. The 30 tok/s gate passes fused. Fusing re-quantizes the adapted weights; the fused copy has not been scored yet.
+**Decode speed (superseded: the fused copy here had lost the adapter; see the entry above).** Five dev restyle inputs, temp 0.7. Adapter loaded unfused: 28.4 tok/s. Fused with `mlx_lm fuse` into a local 4-bit copy: 50.5 tok/s, peak 5.32 GB. Untuned base: 50.7 tok/s. The 30 tok/s gate passes fused. Fusing re-quantizes the adapted weights; the fused copy has not been scored yet.
 
 ---
 

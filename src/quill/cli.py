@@ -222,7 +222,7 @@ def _run(args) -> int:
     from .eval import baselines, harness
 
     cfg = config.load(args.config)
-    r = baselines.run_adapter(cfg, args.name, args.adapter, args.split, n=args.n, tag=args.tag)
+    r = baselines.run_adapter(cfg, args.name, args.adapter, args.split, n=args.n, tag=args.tag, fused=args.fused)
     print({k: v for k, v in r.items() if k != "items"})
     rep = harness.run(cfg, args.name, args.split)
     s = rep["scores"]
@@ -332,6 +332,7 @@ def main(argv: list[str] | None = None) -> int:
     a.add_argument("--tag", default="draft", choices=("paraphrase", "draft"), help="the template's input field")
     a.add_argument("--split", choices=["dev", "test"], default="dev")
     a.add_argument("--n", type=int, default=1, help="candidates per input")
+    a.add_argument("--fused", help="path to a fused copy of the base with this adapter merged in")
     a.set_defaults(fn=_run)
     a = sub.add_parser("blind", help="blind reading test: build the kit, read it in the terminal, report the binomial p")
     a.add_argument("--test", choices=("A", "R"), required=True, help="A: real vs system. R: system vs baseline against a reference")

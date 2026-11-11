@@ -168,7 +168,7 @@ def plain_draft(base, r: dict, retries: int = 2) -> tuple[str, int]:
 
 
 def run_adapter(cfg: dict, name: str, adapter: str, part: str = "dev", n: int = 1, tag: str = "draft", ctx=None,
-                limit: int | None = None, ops=OPS, draft_retries: int = 4) -> dict:
+                limit: int | None = None, ops=OPS, draft_retries: int = 4, fused: str | None = None) -> dict:
     """Score a trained adapter the way the pipeline will use it. `restyle` gives it the eval draft.
     `write` has the untuned base draft plainly from the brief and facts, then restyles that; the
     output is still checked against the brief and facts. `tag` is the template's input field: an
@@ -185,7 +185,10 @@ def run_adapter(cfg: dict, name: str, adapter: str, part: str = "dev", n: int = 
         for r in rows:
             plain[r["id"]], tries[r["id"]] = plain_draft(base, r, draft_retries)
         base.unload()
-    gen = Local(cfg, adapter=adapter_dir(cfg, adapter))
+    if fused:           # the adapter merged into a copy of the base (mlx_lm fuse): same weights, no LoRA overhead
+        gen = Local(dict(cfg, gen=dict(cfg.get("gen", {}), base_model=fused)))
+    else:
+        gen = Local(cfg, adapter=adapter_dir(cfg, adapter))
     jobs = []
     for r in rows:
         system = template.system("restyle", tag, template.bucket(r["words"]))
