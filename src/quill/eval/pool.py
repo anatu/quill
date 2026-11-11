@@ -26,11 +26,12 @@ def segments(text: str, lo: int = 250, hi: int = 350) -> list[str]:
 
 
 def author_chunks(cfg: dict) -> list[dict]:
-    """The author's usable chunks with their split: id, split, post, words, text."""
+    """The author's usable chunks with their split: id, split, post, words, text, and `marked`
+    (the text with a <QUOTE> or <IMAGE> line where one was removed; the training target)."""
     ids = split.load(cfg)
     db = store.connect(store.db_path(cfg))
     out = [dict(id=r["id"], split=ids[r["id"]], post=r["post_file"], words=r["words"], text=r["text"],
-                bucket=r["length_bucket"])
+                bucket=r["length_bucket"], marked=r["text_marked"] or r["text"])
            for r in db.execute("SELECT * FROM usable_chunks ORDER BY id") if r["id"] in ids]
     db.close()
     return out

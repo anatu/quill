@@ -1,4 +1,4 @@
-# Eval: b0 on dev (2026-11-10T09:36:06)
+# Eval: b0 on dev (2026-11-10T18:41:55)
 
 Split hash `bec0e58ea4a7`. Ratios (×) are against the author's held-out rate.
 

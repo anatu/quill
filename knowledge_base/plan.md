@@ -321,6 +321,16 @@ Time and compute: 7 dev days (neg-v1 1.5, neg-v2 1.0, mined families 2.0, M13 1.
 
 ### Phase 3: Training pairs
 
+**Status 2026-11-10: pairs built; the automatic gate passes; the hand check of 50 pairs is not done.** `uv run quill pairs` writes `~/.quill/pairs/v1/{raw,curated}.jsonl`, `~/.quill/data/mlx/sft-v1-{s1,s2}/` and `eval_reports/pairs-v1.md`.
+- Train: 688 chunks. Form A keeps 675 (98.1%), form B keeps 641 (93.2%), both forms 637 (92.6%; the gate is 85%). Dev: A 62 of 62, B 59 of 62; dev rows are `valid.jsonl`. Four chunks exceed 2,048 tokens and are dropped, not re-chunked.
+- Generator: Sonnet 5.5 paraphrases the marked chunk. Form B reuses the Opus train drafts from the verifier retrain. `sft-v1-s2` holds Claude drafts only until Phase 4 step 9 adds the local half.
+- Markers: the target is `text_marked`. The paraphrase keeps each `<QUOTE>`/`<IMAGE>` line. For drafts, Claude names the paragraph each marker follows and the code inserts it, so the input always carries the target's markers.
+- Closure is tolerant of form (numbers as words, percent signs, list numbers, idioms such as "a 180", acronyms, capitalized ordinary words). Without that it failed 34% of pairs, almost all false alarms.
+- Retry: a failed input is regenerated once with the lost items named in the prompt (form B rebuilds the fact list first). It replaced 76 paraphrases and 79 drafts. The usual real loss: Claude drops figurative numbers ("100% confident") when told to remove figures of speech.
+- Inputs are plain: on dev the verifier accepts 7.7% of paraphrase passages and 0% of draft passages (targets 94.8%). Targets are verbatim in every row (checked in code). No test chunk is in the pairs.
+- `template.py` maps the two under-150-word chunks to the `150-300` length tag.
+- Cost: $21.89 (paraphrases and marker placement $13.21, retries $8.68).
+
 Deliverables: `~/.quill/pairs/v1/*.jsonl` (all variants, with provenance and the generator's model id per pair); `~/.quill/data/mlx/sft-v1-s1/` (form A) and `sft-v1-s2/` (form B) in mlx chat format, which `housel_augmentation.md` calls `mix-a000-s1/s2`, with Housel-only dev chunks in `valid.jsonl` for loss monitoring; a curation report.
 
 | Form | Op / input tag | Generator | Teaches |
@@ -357,6 +367,8 @@ Time and compute: 2-3 dev days. About 3 generations per chunk at ~600 tokens. Tr
 Exit gate: ≥85% of train chunks keep both forms after curation. Hand check of 50 pairs: facts closed; inputs free of Housel's tics; targets verbatim.
 
 ### Phase 4: Probes and model bake-off
+
+**Status 2026-11-10: Qwen3.5-9B fails the day-1 probe; the base is now Qwen3-8B, 4-bit (user decision).** Training Qwen3.5-9B with mlx-lm 0.32.2 runs out of memory from about 1,000 tokens, with gradient checkpointing on, and reaches 20 tok/s where it fits. Its Gated DeltaNet layers have no gradient through the Metal kernel, so training falls back to a per-token loop. Details: [logbook.md](logbook.md). `--iters` counts micro-batches; the optimizer and schedule step once per accumulation. The chat template renders the same at training and inference with thinking off. B1 and the recall probe are rerun on the new base. Config: `configs/train/sft.yaml`.
 
 Candidates (notes silicon Q4)
 

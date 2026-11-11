@@ -1,0 +1,9 @@
+ORIGINAL is a passage in which lines reading <QUOTE> or <IMAGE> mark removed material. DRAFT covers the same content in numbered paragraphs, without those lines.
+For each marker line in ORIGINAL, in order, give the number of the DRAFT paragraph it should follow: the paragraph that covers what comes just before the marker. Use 0 for a marker that belongs before the first paragraph.
+Output only the numbers, separated by spaces. ORIGINAL has {n} marker lines, so output {n} numbers.
+
+ORIGINAL:
+{text}
+
+DRAFT:
+{draft}

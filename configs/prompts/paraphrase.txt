@@ -1,4 +1,5 @@
-Rewrite the text below in plain, neutral English. Keep every fact, name, number, date and link, in order. Remove personal style: standard punctuation, no slang, no idioms. Keep about the same length.
+Rewrite the text below in plain, neutral English. Keep every fact, name, number, date and link, in order. Remove personal style: standard punctuation, no slang, no idioms, no figures of speech. Keep about the same length and the same paragraph breaks.
+A line that reads exactly <QUOTE> or <IMAGE> marks removed material. Keep each such line unchanged, on its own line, in the same place. Add none.
 Output only the rewrite.
 
 TEXT:

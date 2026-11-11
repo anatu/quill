@@ -1,0 +1,74 @@
+{
+ "version": "v1",
+ "generated": "2026-11-10T18:39:43",
+ "thresholds": {
+  "mis_min": 0.7,
+  "copy_max": 0.85,
+  "length": [
+   0.5,
+   2.0
+  ],
+  "max_tokens": 2048
+ },
+ "splits": {
+  "dev": {
+   "chunks": 62,
+   "both": 59,
+   "both_share": 0.9516,
+   "A": {
+    "kept": 62,
+    "fails": {},
+    "mis_median": 0.947,
+    "input_to_target_words": 1.02,
+    "max_tokens": 1892
+   },
+   "B": {
+    "kept": 59,
+    "fails": {
+     "closure": 1,
+     "meaning": 2
+    },
+    "mis_median": 0.928,
+    "input_to_target_words": 1.043,
+    "max_tokens": 1872
+   }
+  },
+  "train": {
+   "chunks": 688,
+   "both": 637,
+   "both_share": 0.9259,
+   "A": {
+    "kept": 675,
+    "fails": {
+     "closure": 5,
+     "copy": 2,
+     "meaning": 3,
+     "tokens": 4
+    },
+    "mis_median": 0.947,
+    "input_to_target_words": 1.019,
+    "max_tokens": 2433
+   },
+   "B": {
+    "kept": 641,
+    "fails": {
+     "closure": 26,
+     "meaning": 19,
+     "tokens": 3
+    },
+    "mis_median": 0.925,
+    "input_to_target_words": 1.033,
+    "max_tokens": 2412
+   }
+  }
+ },
+ "gate": {
+  "need": 0.85,
+  "got": 0.9259,
+  "passed": true
+ },
+ "inputs_replaced_on_retry": {
+  "A": 76,
+  "B": 79
+ }
+}

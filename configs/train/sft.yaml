@@ -1,0 +1,20 @@
+# Stage 1 SFT on form A (paraphrase -> author). plan.md Phase 4. mlx-lm 0.32.x.
+# --iters counts micro-batches of batch_size; the optimizer and the LR schedule step once per
+# grad_accumulation_steps iterations (read from mlx_lm/tuner/trainer.py, 0.32.2).
+# `quill train` fills model, data, adapter_path, iters and the schedule's decay steps.
+train: true
+fine_tune_type: lora
+mask_prompt: true              # loss on the assistant turn only
+num_layers: -1                 # all blocks
+lora_parameters: {rank: 16, scale: 2.0, dropout: 0.05}
+optimizer: adamw
+learning_rate: 1.0e-4
+batch_size: 1
+grad_accumulation_steps: 16
+grad_checkpoint: true
+max_seq_length: 2048
+steps_per_report: 16
+steps_per_eval: 160
+val_batches: 25
+save_every: 160
+seed: 0

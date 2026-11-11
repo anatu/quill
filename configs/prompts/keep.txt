@@ -1,0 +1,3 @@
+
+An earlier attempt lost the items below. Each must appear in your output, with the number or name written exactly as shown:
+{keep}

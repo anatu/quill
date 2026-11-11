@@ -1,4 +1,4 @@
-# Baseline v2: Phase 2 exit report, dev (2026-11-10T09:37:55)
+# Baseline v2: Phase 2 exit report, dev (2026-11-10T18:43:30)
 
 Split hash `bec0e58ea4a7`. Aggregate numbers only. The test split is untouched.
 

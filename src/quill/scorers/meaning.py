@@ -82,15 +82,16 @@ def windows(text: str, words: int = 110) -> list[tuple[float, float, str]]:
 
 def candidates(text: str, a: float, b: float, slack: float = 0.07, sizes=(1.0, 1.3)) -> list[str]:
     """Runs of whole sentences in `text` that could match an input window at share range [a, b]:
-    they start within `slack` of a and hold about the same share of the text, at a few sizes."""
+    they start within `slack` of a (or are the two nearest starts) and hold about the same share of the text, at a few sizes."""
     sents = sentences(text)
     n = [len(x.split()) for x in sents]
     total = max(1, sum(n))
     starts = np.cumsum([0] + n[:-1]) / total
     out = []
-    for i, st in enumerate(starts):
-        if abs(st - a) > slack:
-            continue
+    near = [i for i, st in enumerate(starts) if abs(st - a) <= slack]
+    if not near:                                # long sentences: no start inside the slack, so take the two nearest
+        near = sorted(sorted(range(len(sents)), key=lambda i: abs(starts[i] - a))[:2])
+    for i in near:
         for k in sizes:
             want, got, j = (b - a) * k * total, 0, i
             while j < len(sents) and got < want:

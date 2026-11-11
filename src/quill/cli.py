@@ -163,6 +163,18 @@ def _eval(args) -> int:
     return 0
 
 
+def _pairs(args) -> int:
+    from .pairs import build
+
+    r = build.run(config.load(args.config), retries=args.retries)
+    for part, v in r["splits"].items():
+        print(f"{part}: {v['chunks']} chunks  A kept {v['A']['kept']}  B kept {v['B']['kept']}  both {v['both_share']:.1%}")
+    print(f"gate (85% of train chunks keep both forms): {'passes' if r['gate']['passed'] else 'FAILS'}")
+    for k, v in r["data"].items():
+        print(f"{k}: {v['rows']} -> {v['dir']}")
+    return 0 if r["gate"]["passed"] else 1
+
+
 def _inputs(args) -> int:
     from .eval import inputs
 
@@ -271,6 +283,9 @@ def main(argv: list[str] | None = None) -> int:
     a.add_argument("--force", action="store_true", help="regenerate and overwrite the frozen inputs")
     a.add_argument("--train-drafts", action="store_true", help="facts and drafts for train chunks: verifier negatives")
     a.set_defaults(fn=_inputs)
+    a = sub.add_parser("pairs", help="build, curate and write the training pairs (paraphrases through Claude)")
+    a.add_argument("--retries", type=int, default=1, help="regenerations of a failed paraphrase")
+    a.set_defaults(fn=_pairs)
     a = sub.add_parser("baseline", help="run a baseline (b0 Claude, b1 local base, b2 the input) and score it")
     a.add_argument("name", choices=["b0", "b1", "b2"])
     a.add_argument("--split", choices=["dev", "test"], default="dev")

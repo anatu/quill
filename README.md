@@ -10,7 +10,7 @@
   <img alt="MLX" src="https://img.shields.io/badge/runs%20on-MLX%20%2F%20Apple%20Silicon-black">
   <img alt="QLoRA" src="https://img.shields.io/badge/method-QLoRA%20on%20a%209B%20model-8a2be2">
   <img alt="Local only" src="https://img.shields.io/badge/data-never%20leaves%20the%20machine-2e8b57">
-  <img alt="Status" src="https://img.shields.io/badge/status-phase%203%20of%2010-orange">
+  <img alt="Status" src="https://img.shields.io/badge/status-phase%204%20of%2010-orange">
 </p>
 
 ---
@@ -21,7 +21,7 @@ Quill is the attempt to close that gap with weights, not prompts. It is a QLoRA 
 
 The first voice: Morgan Housel's essays on the Collaborative Fund blog, used with Collaborative Fund's consent.
 
-> **Where it stands.** The corpus, the evaluation harness and the baselines are done. Training pairs are being built now. No adapter has been trained yet, so nothing below is a demo of one. The numbers are the bar it has to clear.
+> **Where it stands.** The corpus, the evaluation harness, the baselines and the training pairs are done. The model bake-off is next. No adapter has been trained yet, so nothing below is a demo of one. The numbers are the bar it has to clear.
 
 ## The gap
 
@@ -141,8 +141,8 @@ Some results worth knowing:
 | ✓ | 0 Source and consent audit | Done, except the stored consent copy |
 | ✓ | 1 Extraction and cleaning | Done. 330 posts, 318,971 words, 835 chunks |
 | ✓ | 2 Splits, eval harness, baselines | Done on dev. Exit gate passes |
-| ● | 3 Training pairs | In progress: 750 chunks paraphrased and drafted; curation running |
-| | 4 Model bake-off | Next |
+| ✓ | 3 Training pairs | Done. 675 paraphrase pairs and 641 draft pairs survive curation; 92.6% of train chunks keep both ([report](eval_reports/pairs-v1.md)). A human read of 50 pairs is still open |
+| ● | 4 Model bake-off | In progress. Qwen3.5-9B cannot be trained on this Mac with mlx-lm ([logbook](knowledge_base/logbook.md)); the base is now Qwen3-8B |
 | | 5 Style fine-tune and ablations | |
 | | 6 Inference pipeline | |
 | | 8 Ship gate | Blind reads on the untouched test split |
@@ -221,6 +221,7 @@ configs/
   quill.yaml            paths, thresholds, dropped posts, decisions
   lexicon/              seed lexicon v0 and the Kobak excess-word list
   prompts/              prompts for eval inputs, pairs, B0/B1, the judge and the recall probe
+  train/                mlx-lm training configs
 src/quill/
   cli.py                the commands above
   template.py           the one prompt template, shared by training and serving
@@ -234,7 +235,7 @@ src/quill/
   pairs/                generate (paraphrases, marker placement), curate, to_mlx, build
 eval_reports/           aggregate metrics only
 tests/                  synthetic text only; no corpus text
-knowledge_base/         plan, literature review, research notes, decision docs
+knowledge_base/         plan, experiment logbook, literature review, research notes, decision docs
 ```
 
 </details>
