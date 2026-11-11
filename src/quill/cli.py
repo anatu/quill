@@ -257,7 +257,14 @@ def _judge(args) -> int:
 def _recall(args) -> int:
     from .eval import baselines
 
-    r = baselines.recall_probe(config.load(args.config), args.split)
+    cfg = config.load(args.config)
+    gen = None
+    if args.adapter:
+        from . import train
+        from .gen.local import Local
+
+        gen = Local(cfg, adapter=train.adapter_dir(cfg, args.adapter))
+    r = baselines.recall_probe(cfg, args.split, gen=gen, name=args.adapter or "base")
     print(f"{r['model']} on {args.split}: {r['prompts']} prompts  max span {r['max_span']} words  "
           f"at or over {r['gate_words']}: {r['flagged']}")
     print(f"by prompt: {r['by_kind']}")
@@ -340,8 +347,9 @@ def main(argv: list[str] | None = None) -> int:
     a.add_argument("--split", default="dev", choices=("dev", "test"))
     a.add_argument("--n", type=int, default=40)
     a.set_defaults(fn=_judge)
-    a = sub.add_parser("recall", help="recall probe: longest verbatim spans from the untuned local base")
+    a = sub.add_parser("recall", help="recall probe: longest verbatim spans from the local base, untuned or with an adapter")
     a.add_argument("--split", choices=["dev", "test"], default="dev")
+    a.add_argument("--adapter", help="probe the base with this adapter loaded")
     a.set_defaults(fn=_recall)
     a = sub.add_parser("gate", help="show the Phase 1 exit gate")
     a.set_defaults(fn=_gate)

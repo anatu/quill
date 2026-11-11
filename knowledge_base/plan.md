@@ -370,6 +370,8 @@ Exit gate: ≥85% of train chunks keep both forms after curation. Hand check of 
 
 **Status 2026-11-10: Qwen3.5-9B fails the day-1 probe; the base is now Qwen3-8B, 4-bit (user decision).** Training Qwen3.5-9B with mlx-lm 0.32.2 runs out of memory from about 1,000 tokens, with gradient checkpointing on, and reaches 20 tok/s where it fits. Its Gated DeltaNet layers have no gradient through the Metal kernel, so training falls back to a per-token loop. Details: [logbook.md](logbook.md). `--iters` counts micro-batches; the optimizer and schedule step once per accumulation. The chat template renders the same at training and inference with thinking off. B1 and the recall probe are rerun on the new base. Config: `configs/train/sft.yaml`.
 
+**Status 2026-11-11: stage 1 on Qwen3-8B passes the bake-off gates on dev.** Adapter `sft-v1-s1p` (form A, input paragraphs merged in part of the rows, one pass). Composite at N=4 with rerank: 0.508 [0.44, 0.57]; +0.252 [+0.159, +0.346] over B1 on the same base; +0.256 over B0. Training peak 12.84 GB. Decode 28 tok/s with the adapter loaded, 50.5 tok/s fused (the fused copy is not scored yet). Recall probe: 3 prompts at or over the gate, max 9 words (base: 4, max 9); 31 paraphrase prompts rebuild a span of the item's own held-out post, which H8 no longer counts. Open: entity pass 70.2% and fallback 29.8% against the H9 limit of 15%; rerank does not fix it. Details: [logbook.md](logbook.md).
+
 Candidates (notes silicon Q4)
 
 | Candidate | Why | Caveats from the notes |
@@ -661,7 +663,7 @@ Hard (all must pass)
 | H5 | Meaning, `restyle` | Every returned output MIS ≥ 0.70; median ≥ 0.75 | [TinyStyler](https://arxiv.org/html/2406.15586) filter |
 | H6 | Fact coverage, `write` | ≥ 98% of facts entailed | Plan threshold |
 | H7 | New entities in output (Housel's recurring names and companies included) | 0 | Replaces v1's PII criterion |
-| H8 | Memorization | 0 returned outputs with an 8-10-word span from the whole Housel corpus; recall-probe spans no longer than the base model's | [Whack-a-Mole](https://arxiv.org/pdf/2603.20957v2); [Chakrabarty et al.](https://arxiv.org/html/2510.13939) resampled regurgitation |
+| H8 | Memorization | 0 returned outputs with an 8-10-word span from the whole Housel corpus; recall-probe spans no longer than the base model's. Recall means spans from the corpus outside the item's own post; spans rebuilt from a paraphrase of the item's own post are reported and not gated (user decision 2026-11-11) | [Whack-a-Mole](https://arxiv.org/pdf/2603.20957v2); [Chakrabarty et al.](https://arxiv.org/html/2510.13939) resampled regurgitation |
 | H9 | Fallback rate | ≤ 15% | Plan threshold |
 | H10 | Latency | Phase 6 p50 targets | Notes silicon Q5 |
 | H11 | Artifact count on returned outputs | 0 | [negative_signal.md](negative_signal.md) item 13 |

@@ -227,8 +227,10 @@ def first_sentences(text: str, min_words: int = 12) -> str:
 
 def recall_probe(cfg: dict, part: str = "dev", gen=None, ctx=None, limit: int | None = None, name: str = "base") -> dict:
     """Ask a model for the author's held-out text three ways (a summary, a neutral paraphrase,
-    the opening line) and record the longest verbatim span against the whole corpus. Words the
-    prompt itself supplied are exempt."""
+    the opening line) and record the longest verbatim span the prompt did not supply. Spans from
+    the corpus outside the item's own post are recall and are gated (H8). Spans from the item's
+    own post are reconstruction of the held-out original and are reported apart, as in M9: the
+    paraphrase prompt is the trained task, so an adapter rebuilds text it never saw."""
     from . import harness
 
     if gen is None:
@@ -252,16 +254,20 @@ def recall_probe(cfg: dict, part: str = "dev", gen=None, ctx=None, limit: int | 
                     if hasattr(gen, "peak_gb") else (j["user"],) for j in jobs])
     res = []
     for j, o in zip(jobs, outs):
-        m = ctx.memo.longest(o, j["given"])
-        res.append(dict(id=j["id"], kind=j["kind"], span=m["span"], text=m.get("text", ""), output_words=len(o.split())))
+        span, rebuilt = ctx.spans(o, j["given"], j["id"])
+        res.append(dict(id=j["id"], kind=j["kind"], span=span, rebuilt=rebuilt, output_words=len(o.split())))
     by = {}
     for k in ("summary", "paraphrase", "opening"):
         s = sorted(r["span"] for r in res if r["kind"] == k)
+        t = sorted(r["rebuilt"] for r in res if r["kind"] == k)
         by[k] = dict(n=len(s), max_span=s[-1] if s else 0, flagged=sum(x >= ctx.memo.n for x in s),
-                     median_span=s[len(s) // 2] if s else 0)
+                     median_span=s[len(s) // 2] if s else 0, rebuilt_max=t[-1] if t else 0,
+                     rebuilt_flagged=sum(x >= ctx.memo.n for x in t))
     rep = dict(system=f"recall-probe:{name}", model=gen.model, split=part, generated=time.strftime("%Y-%m-%dT%H:%M:%S"),
                gate_words=ctx.memo.n, prompts=len(res), max_span=max((r["span"] for r in res), default=0),
-               flagged=sum(r["span"] >= ctx.memo.n for r in res), by_kind=by)
+               flagged=sum(r["span"] >= ctx.memo.n for r in res),
+               rebuilt_max=max((r["rebuilt"] for r in res), default=0),
+               rebuilt_flagged=sum(r["rebuilt"] >= ctx.memo.n for r in res), by_kind=by)
     if limit is None:
         d = Path(cfg["paths"]["eval"]) / "recall"
         d.mkdir(parents=True, exist_ok=True)
@@ -269,10 +275,14 @@ def recall_probe(cfg: dict, part: str = "dev", gen=None, ctx=None, limit: int | 
         rd = harness.REPO / "eval_reports"
         (rd / f"recall-probe-{name}-{part}.json").write_text(json.dumps(rep, indent=1))
         L = [f"# Recall probe: {name} ({gen.model}) on {part} ({rep['generated']})", "",
-             f"Longest verbatim span shared with the whole corpus, in words. The gate is {ctx.memo.n}. "
-             "Words supplied by the prompt are exempt. Spans in an untuned model are the baseline the adapter must not raise (H8).",
-             "", "| Prompt | n | Max span | Median | At or over the gate |", "|---|---|---|---|---|"]
-        L += [f"| {k} | {v['n']} | {v['max_span']} | {v['median_span']} | {v['flagged']} |" for k, v in by.items()]
+             f"Longest verbatim span, in words, that the prompt did not supply. The gate is {ctx.memo.n}. "
+             "Recall is a span from the corpus outside the item's own post; the untuned model's figures are the "
+             "baseline the adapter must not raise (H8). Rebuilt is a span from the item's own held-out post: "
+             "reconstruction from the prompt, reported and not gated (decision 2026-11-11).",
+             "", "| Prompt | n | Recall max | Recall median | Recall at or over the gate | Rebuilt max | Rebuilt at or over the gate |",
+             "|---|---|---|---|---|---|---|"]
+        L += [f"| {k} | {v['n']} | {v['max_span']} | {v['median_span']} | {v['flagged']} | {v['rebuilt_max']} | {v['rebuilt_flagged']} |"
+              for k, v in by.items()]
         (rd / f"recall-probe-{name}-{part}.md").write_text("\n".join(L) + "\n")
         rep["_out"] = str(rd / f"recall-probe-{name}-{part}.md")
     return dict(rep, results=res if limit else None)

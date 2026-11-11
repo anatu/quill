@@ -4,6 +4,26 @@ One entry per experiment or finding, newest first. Each entry says what was run,
 
 ---
 
+## 2026-11-11: N=4 rerank, the adapter's recall probe, and fused speed
+
+**Phase 4.** Reports: `eval_reports/sft-v1-s1p-n4-dev.md`, `recall-probe-sft-v1-s1p-dev.md`.
+
+**N=4 with rerank (`sft-v1-s1p`).** Composite 0.508 [0.44, 0.57]. Paired: +0.065 [+0.031, +0.104] over N=1; +0.252 [+0.159, +0.346] over Qwen3-8B B1; +0.256 [+0.167, +0.349] over B0. M1 76.1% (restyle 67.5, write 85.3). M15 author 68.4%, LLM 16.8%. M4 0.848; write-op facts entailed 77.7% (B1 81.7%). Words per paragraph 43 (author 34).
+
+- **Rerank does not fix entities.** 168 of 496 candidates fail the entity check; fallback falls only from 34.7% to 29.8%; M5 pass 70.2%. The same inputs fail across candidates.
+- **Memorization in candidates:** 17 of 496 carry a span of 8+ words (untuned base: 3 of 496). Rerank drops them; 1 of 124 final outputs is flagged, max 8 words.
+
+**Recall probe with the adapter loaded.** 35 of 186 prompts at or over the 8-word gate, max span 15 (untuned base: 6, max 9). By prompt: summary 1, opening 1, paraphrase 33 (median span 8; base 0).
+
+- The paraphrase arm asks for the original of a held-out dev passage from its paraphrase. That is the trained task. Of its 33 flagged spans, 21 occur in the item's own dev chunk, which was never trained on; 4 occur in a train chunk; 11 matched nothing under my simple normalization.
+- So the rise is mostly inversion of the input, not recall of training text. It is still a rise, and H8 as written ("the adapter must not raise") fails on this arm. Summary and opening arms do not rise.
+- The same effect shows in M9 `target_rebuilt`: 53 of 124 outputs share an 8+ word span with the held-out target (B1: 10).
+- **Decision (user, 2026-11-11): do not count it.** The probe now splits each span as M9 does: recall (corpus outside the item's own post, gated) and rebuilt (the item's own post, reported). Rescored from the cache: adapter recall 3 prompts at or over the gate, max 9 words; untuned base 4, max 9. H8's probe half passes. Rebuilt: adapter 32 prompts (31 on the paraphrase arm, max 15); base 2. The probe files no longer store span text.
+
+**Decode speed.** Five dev restyle inputs, temp 0.7. Adapter loaded unfused: 28.4 tok/s. Fused with `mlx_lm fuse` into a local 4-bit copy: 50.5 tok/s, peak 5.32 GB. Untuned base: 50.7 tok/s. The 30 tok/s gate passes fused. Fusing re-quantizes the adapted weights; the fused copy has not been scored yet.
+
+---
+
 ## 2026-11-11: Merging input paragraphs in training fixes most of the paragraphing
 
 **Phase 4.** Report: `eval_reports/sft-v1-s1p-dev.md`.

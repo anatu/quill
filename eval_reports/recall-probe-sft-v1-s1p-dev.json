@@ -1,0 +1,38 @@
+{
+ "system": "recall-probe:sft-v1-s1p",
+ "model": "qwen3-8b-4bit+sft-v1-s1p:061a0608",
+ "split": "dev",
+ "generated": "2026-11-11T09:53:00",
+ "gate_words": 8,
+ "prompts": 186,
+ "max_span": 9,
+ "flagged": 3,
+ "rebuilt_max": 15,
+ "rebuilt_flagged": 32,
+ "by_kind": {
+  "summary": {
+   "n": 62,
+   "max_span": 0,
+   "flagged": 0,
+   "median_span": 0,
+   "rebuilt_max": 8,
+   "rebuilt_flagged": 1
+  },
+  "paraphrase": {
+   "n": 62,
+   "max_span": 9,
+   "flagged": 2,
+   "median_span": 0,
+   "rebuilt_max": 15,
+   "rebuilt_flagged": 31
+  },
+  "opening": {
+   "n": 62,
+   "max_span": 8,
+   "flagged": 1,
+   "median_span": 0,
+   "rebuilt_max": 0,
+   "rebuilt_flagged": 0
+  }
+ }
+}

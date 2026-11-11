@@ -142,7 +142,7 @@ Some results worth knowing:
 | ✓ | 1 Extraction and cleaning | Done. 330 posts, 318,971 words, 835 chunks |
 | ✓ | 2 Splits, eval harness, baselines | Done on dev. Exit gate passes |
 | ✓ | 3 Training pairs | Done. 675 paraphrase pairs and 641 draft pairs survive curation; 92.6% of train chunks keep both ([report](eval_reports/pairs-v1.md)). A human read of 50 pairs is still open |
-| ● | 4 Model bake-off | In progress. Qwen3.5-9B cannot be trained on this Mac with mlx-lm ([logbook](knowledge_base/logbook.md)); the base is now Qwen3-8B |
+| ● | 4 Model bake-off | In progress. Base is Qwen3-8B ([why](knowledge_base/logbook.md)). The stage-1 adapter scores 0.51 on the dev composite against 0.26 for the untuned base and 0.25 for prompted Opus. Open: a third of outputs still drop or add a name or number |
 | | 5 Style fine-tune and ablations | |
 | | 6 Inference pipeline | |
 | | 8 Ship gate | Blind reads on the untouched test split |
@@ -247,7 +247,7 @@ Imitating a living writer is a thing to do carefully or not at all.
 - **Consent first.** The corpus is used under the rights holder's consent, recorded in `~/.quill/legal/scope.yaml`. Any use marked unknown there is blocked in code.
 - **Local only.** The corpus, adapters and weights never leave the machine and are not in this repo. `.gitignore` blocks weights, databases, JSONL and HTML.
 - **No passing off.** Outputs are never presented as the author's own writing. Tool, file and adapter names never carry the author's name.
-- **No copying.** A hard gate rejects any output that shares a long verbatim span with the corpus.
+- **No copying.** A hard gate rejects any output that shares a long verbatim span with the corpus. One known limit: given a close paraphrase of one of the author's own passages, the adapter rebuilds some of the original wording. That is measured and reported, not gated; the tool is for restyling your own drafts.
 - **Polite crawling.** Raw pages are cached once and never re-fetched. Crawls honour robots.txt, AI opt-outs and crawl delays.
 
 Details are in [knowledge_base/plan.md](knowledge_base/plan.md), section 2.4. Nothing here is legal advice.
