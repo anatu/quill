@@ -1,0 +1,9 @@
+Write the text this request asks for, as a helpful assistant would, from the notes. Use every fact, name, number and date in the notes. Add no new facts, names or numbers.
+About {words} words of plain prose in paragraphs. No headings, no bullet lists, no bold, no preamble, no closing remark.
+Output only the text.
+
+REQUEST:
+{brief}
+
+NOTES:
+{facts}

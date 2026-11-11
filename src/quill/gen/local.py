@@ -12,10 +12,13 @@ THINK = re.compile(r"<think>.*?</think>\s*", re.S)
 
 
 class Local:
-    def __init__(self, cfg: dict, temp: float = 0.7, top_p: float = 0.95):
+    def __init__(self, cfg: dict, temp: float = 0.7, top_p: float = 0.95, adapter: str | Path | None = None):
         g = cfg.get("gen", {})
         self.path = Path(g.get("base_model", "~/.quill/models/qwen3.5-9b-4bit")).expanduser()
-        self.model = self.path.name
+        self.adapter = Path(adapter).expanduser() if adapter else None
+        self.model = self.path.name + (f"+{self.adapter.name}" if self.adapter else "")
+        if self.adapter:                # a retrained adapter of the same name must not hit the old cache
+            self.model += ":" + hashlib.sha256((self.adapter / "adapters.safetensors").read_bytes()).hexdigest()[:8]
         self.temp, self.top_p = temp, top_p
         d = Path(cfg["paths"]["eval"]) / "cache"
         d.mkdir(parents=True, exist_ok=True)
@@ -31,8 +34,18 @@ class Local:
         if self._m is None:
             from mlx_lm import load
 
-            self._m = load(str(self.path))
+            self._m = load(str(self.path), adapter_path=str(self.adapter) if self.adapter else None)
         return self._m
+
+    def unload(self) -> None:
+        """Free the model, so a second one fits in memory."""
+        self._m = None
+        import gc
+
+        import mlx.core as mx
+
+        gc.collect()
+        mx.clear_cache()
 
     def render(self, user: str, system: str | None) -> str:
         _, tok = self._load()

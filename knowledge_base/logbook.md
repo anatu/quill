@@ -4,6 +4,63 @@ One entry per experiment or finding, newest first. Each entry says what was run,
 
 ---
 
+## 2026-11-11: Merging input paragraphs in training fixes most of the paragraphing
+
+**Phase 4.** Report: `eval_reports/sft-v1-s1p-dev.md`.
+
+`sft-v1-s1p` is `sft-v1-s1` with input paragraphs left alone in 40% of rows, merged in groups of 2-4 in 40% and fully merged in 20% (`pairs/to_mlx.merge_paragraphs`, fixed per row). Targets are unchanged. Median input breaks fall from 10 to 5. Same config, one pass: val 1.210 → 0.639, peak 12.84 GB, 93 minutes.
+
+| Dev, N=1 | sft-v1-s1 | sft-v1-s1p |
+|---|---|---|
+| Composite (95% CI) | 0.425 [0.36, 0.49] | 0.443 [0.37, 0.51] |
+| M1 accept (restyle / write) | 60.3% (61.2 / 59.2) | 71.2% (62.5 / 80.3) |
+| M15 author / LLM | 59.6% / 23.1% | 60.9% / 24.4% |
+| M4 meaning | 0.866 | 0.858 |
+| Words per paragraph (author 34) | 90 | 52 |
+| One-sentence paragraphs (author 42%) | 1.8% | 26.1% |
+| M5 entity pass | 64.5% | 66.9% |
+| Fallback | 36.3% | 34.7% |
+
+- Paired bootstrap, s1p minus s1: +0.018 [-0.035, +0.073]. Not significant. s1p minus Qwen3-8B B1: +0.187 [+0.097, +0.285].
+- The gain is in the write op, where the input is an untuned-base draft.
+- Entities and speed (26 tok/s) do not move.
+
+**Decision:** carry `sft-v1-s1p` forward. N=4 with rerank is running on it.
+
+---
+
+## 2026-11-11: Stage-1 adapter on Qwen3-8B beats same-base B1
+
+**Phase 4.** Reports: `eval_reports/sft-v1-s1-dev.md`, `b1-dev.md` (Qwen3-8B), `b1-qwen35-dev.md`, `recall-probe-base-dev.md` (Qwen3-8B), `recall-probe-qwen35-dev.md`.
+
+Training (`sft-v1-s1`): `configs/train/sft.yaml`, `mlx-community/Qwen3-8B-4bit`, 675 form-A pairs, one pass (675 micro-batches, accumulation 16), LoRA rank 16 on all 36 layers, LR 1e-4 cosine.
+
+- Val loss 1.195 → 0.631 (0.580 at step 640). Last train loss 0.758.
+- Peak memory 12.84 GB (gate 17). 62 loss-tokens/s. 94 minutes.
+
+Dev results. The adapter ran at N=1 with the `paraphrase` tag; B1 ran at N=4 with rerank.
+
+| | B1 Qwen3.5 | B1 Qwen3-8B | sft-v1-s1 |
+|---|---|---|---|
+| Composite (95% CI) | 0.057 [0.00, 0.10] | 0.256 [0.19, 0.32] | 0.425 [0.36, 0.49] |
+| M1 accept | 1.6% | 21.4% | 60.3% |
+| M15 author / LLM | 1.1% / 85.9% | 16.2% / 77.3% | 59.6% / 23.1% |
+| M4 meaning | 0.820 | 0.870 | 0.866 |
+| M5 entity pass | 91.1% | 87.9% | 64.5% |
+| Fallback | 25.8% | 14.5% | 36.3% |
+| M9 flagged (max span) | 1 (8) | 0 (0) | 3 (9) |
+
+- **Paired bootstrap, adapter minus Qwen3-8B B1:** +0.169, 95% CI [+0.083, +0.261], 62 chunks. The CI excludes 0: gate passes.
+- **Untuned Qwen3-8B is a much stronger B1 than Qwen3.5-9B** (0.26 against 0.06). Its gain is in the write op (M1 41.1%); restyle M1 is 3.7%. The adapter scores 61.2% restyle, 59.2% write.
+- **Decode speed fails the gate:** 26 tok/s with the unfused adapter, 24 tok/s for the untuned base in B1, 44-48 tok/s on shorter prompts. Gate is 30.
+- **Entities are the adapter's weak point.** 44 of 124 outputs fail (36 missing, 13 added). N=1 gives the reranker nothing to choose from.
+- **Paragraphing follows the input.** Outputs run 90 words per paragraph against the author's 34 (z 9.4); one-sentence paragraphs 1.8% against 42%. Eval inputs carry a median of 1 paragraph break; training inputs carry 10, matching their targets. The adapter never had to re-paragraph.
+- **Recall probe, untuned Qwen3-8B:** max span 9 words; 6 of 186 prompts at or over the 8-word gate (Qwen3.5: 12 words, 15 prompts). This is the baseline for H8. The adapter has not been probed yet.
+
+**Open:** retrain with paragraph breaks collapsed in part of the inputs; N=4 with rerank; fuse the adapter and re-measure speed; recall probe on the adapter.
+
+---
+
 ## 2026-11-10: Qwen3.5-9B cannot be fine-tuned here; base switches to Qwen3-8B
 
 **Phase 4, day-1 probe.** mlx 0.32.4, mlx-lm 0.32.2 (the latest release), M4 Pro 24 GB, `iogpu.wired_limit_mb` at its default.

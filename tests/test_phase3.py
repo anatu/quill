@@ -169,6 +169,19 @@ def test_to_mlx_writes_kept_pairs_only_and_dev_as_valid(tmp_path):
     assert out["s1"]["hash"] == to_mlx.write(cfg, _scored())["s1"]["hash"]            # deterministic
 
 
+def test_merge_paragraphs_keeps_words_and_marker_lines():
+    text = "\n\n".join(["one a.", "two b.", "<QUOTE>", "three c.", "four d.", "five e.", "<IMAGE>", "six f."])
+    seen = set()
+    for i in range(60):
+        out = to_mlx.merge_paragraphs(text, f"k{i}")
+        assert out == to_mlx.merge_paragraphs(text, f"k{i}")                           # fixed by the key
+        assert out.split() == text.split()                                              # same words, same order
+        paras = out.split("\n\n")
+        assert paras.count("<QUOTE>") == 1 and paras.count("<IMAGE>") == 1              # markers stay alone
+        seen.add(len(paras))
+    assert 8 in seen and 5 in seen and len(seen) >= 3                                   # as is, fully merged, partial
+
+
 # ---------------------------------------------------------------- meaning windows
 
 def test_candidates_fall_back_to_the_nearest_starts_not_the_whole_text():

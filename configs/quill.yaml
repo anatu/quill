@@ -16,7 +16,7 @@ gen:                       # generation routes (decided 2026-11-09)
   util_model: claude-sonnet-5-5    # fact lists and briefs
   draft_model: claude-opus-5-5     # generic drafts, the style guide and B0 [P]
   workers: 4
-  base_model: ~/.quill/models/qwen3.5-9b-4bit   # mlx-community/Qwen3.5-9B-4bit; B1, the recall probe, the write drafter
+  base_model: ~/.quill/models/qwen3-8b-4bit   # mlx-community/Qwen3-8B-4bit (Qwen3.5-9B cannot be trained with mlx-lm 0.32.2; logbook 2026-11-10)
 
 author:
   name: Morgan Housel

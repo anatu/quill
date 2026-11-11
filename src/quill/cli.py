@@ -210,6 +210,28 @@ def _baseline(args) -> int:
     return 0
 
 
+def _train(args) -> int:
+    from . import train
+
+    r = train.run(config.load(args.config), args.name, stage=args.stage, passes=args.passes, resume=args.resume)
+    print(r)
+    return r["exit"]
+
+
+def _run(args) -> int:
+    from .eval import baselines, harness
+
+    cfg = config.load(args.config)
+    r = baselines.run_adapter(cfg, args.name, args.adapter, args.split, n=args.n, tag=args.tag)
+    print({k: v for k, v in r.items() if k != "items"})
+    rep = harness.run(cfg, args.name, args.split)
+    s = rep["scores"]
+    print(f"{args.name} on {args.split}: composite {s.get('composite')}  M1 accept {s['M1_av']['accept_rate']:.1%}  "
+          f"fallback {s.get('fallback_rate')}")
+    print(f"wrote {rep['_out']}")
+    return 0
+
+
 def _blind(args) -> int:
     from .eval import blind
 
@@ -291,6 +313,19 @@ def main(argv: list[str] | None = None) -> int:
     a.add_argument("--split", choices=["dev", "test"], default="dev")
     a.add_argument("--n", type=int, default=4, help="candidates per input")
     a.set_defaults(fn=_baseline)
+    a = sub.add_parser("train", help="train an adapter with mlx-lm on a pairs stage")
+    a.add_argument("name", help="adapter name under ~/.quill/adapters/")
+    a.add_argument("--stage", default="s1", choices=("s1", "s2", "s1p"))
+    a.add_argument("--passes", type=float, default=1.0)
+    a.add_argument("--resume", help="adapter to start from")
+    a.set_defaults(fn=_train)
+    a = sub.add_parser("run", help="generate with a trained adapter on the eval inputs and score it")
+    a.add_argument("name", help="system name for the outputs and report")
+    a.add_argument("--adapter", required=True)
+    a.add_argument("--tag", default="draft", choices=("paraphrase", "draft"), help="the template's input field")
+    a.add_argument("--split", choices=["dev", "test"], default="dev")
+    a.add_argument("--n", type=int, default=1, help="candidates per input")
+    a.set_defaults(fn=_run)
     a = sub.add_parser("blind", help="blind reading test: build the kit, read it in the terminal, report the binomial p")
     a.add_argument("--test", choices=("A", "R"), required=True, help="A: real vs system. R: system vs baseline against a reference")
     a.add_argument("--system", required=True)

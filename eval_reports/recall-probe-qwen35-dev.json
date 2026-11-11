@@ -1,0 +1,30 @@
+{
+ "system": "recall-probe:base",
+ "model": "qwen3.5-9b-4bit",
+ "split": "dev",
+ "generated": "2026-11-09T18:09:24",
+ "gate_words": 8,
+ "prompts": 186,
+ "max_span": 12,
+ "flagged": 15,
+ "by_kind": {
+  "summary": {
+   "n": 62,
+   "max_span": 9,
+   "flagged": 5,
+   "median_span": 0
+  },
+  "paraphrase": {
+   "n": 62,
+   "max_span": 11,
+   "flagged": 6,
+   "median_span": 0
+  },
+  "opening": {
+   "n": 62,
+   "max_span": 12,
+   "flagged": 4,
+   "median_span": 0
+  }
+ }
+}

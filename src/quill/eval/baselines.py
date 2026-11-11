@@ -102,6 +102,75 @@ def rerank(ctx, cands: list[str], given: str, words: int, chunk_id: str | None =
     return dict(choice=best, fallback=not ok, checks=checks, delta=[round(d, 4) for d in delta])
 
 
+def _pick(cfg: dict, jobs: list[dict], texts: list[str], n: int, gen, ctx=None) -> tuple[list[dict], dict]:
+    """Group the candidates by (chunk, op), rerank each group and collect the run statistics."""
+    from . import harness
+
+    ctx = ctx or harness.Context(cfg)
+    groups: dict = {}
+    for j, t in zip(jobs, texts):
+        groups.setdefault((j["id"], j["op"]), []).append((j, t))
+    items = []
+    for (cid, op), g_ in groups.items():
+        cands = [t for _, t in g_]
+        j = g_[0][0]
+        rr = rerank(ctx, cands, j["input"], j["words"], cid)
+        items.append(dict(id=cid, op=op, text=cands[rr["choice"]], input=j["input"], length_words=j["words"],
+                          fallback=rr["fallback"], candidates=cands, rerank=rr))
+    fails = [f for i in items for c in i["rerank"]["checks"] for f in c["fails"]]
+    stats = dict(n=len(items), samples=n, model=gen.model, new_calls=gen.calls,
+                 fallback_rate=round(sum(i["fallback"] for i in items) / max(1, len(items)), 4),
+                 candidate_fail_counts={f: fails.count(f) for f in sorted(set(fails))},
+                 candidates=len(texts))
+    if hasattr(gen, "cost"):
+        stats["cost_usd"] = round(gen.cost, 2)
+    if hasattr(gen, "peak_gb"):
+        stats.update(tokens=gen.tokens, tok_per_s=round(gen.tokens / max(1e-9, gen.seconds), 1),
+                     peak_gb=round(gen.peak_gb, 2))
+    return items, stats
+
+
+MARKER_LINE = __import__("re").compile(r"(?m)^<(?:QUOTE|IMAGE)>\s*$\n?")
+
+
+def run_adapter(cfg: dict, name: str, adapter: str, part: str = "dev", n: int = 1, tag: str = "draft", ctx=None,
+                limit: int | None = None, ops=OPS) -> dict:
+    """Score a trained adapter the way the pipeline will use it. `restyle` gives it the eval draft.
+    `write` has the untuned base draft plainly from the brief and facts, then restyles that; the
+    output is still checked against the brief and facts. `tag` is the template's input field: an
+    adapter trained on form A only has seen `paraphrase`."""
+    from .. import template
+    from ..gen.local import Local
+    from ..train import adapter_dir
+
+    rows = inputs.load(cfg, part)[:limit]
+    plain = {}
+    if "write" in ops:
+        base = Local(cfg)
+        outs = base.map([(prompt("write_draft", words=r["words"], brief=r["brief"], facts=r["facts"]), None, 0,
+                          int(r["words"] * 2.2) + 150) for r in rows])
+        plain = {r["id"]: o for r, o in zip(rows, outs)}
+        base.unload()
+    gen = Local(cfg, adapter=adapter_dir(cfg, adapter))
+    jobs = []
+    for r in rows:
+        system = template.system("restyle", tag, template.bucket(r["words"]))
+        for op in ops:
+            user = r["draft"] if op == "restyle" else plain[r["id"]]
+            given = r["draft"] if op == "restyle" else inputs.write_input(r)
+            jobs += [dict(id=r["id"], op=op, sample=s, system=system, user=user, input=given, words=r["words"]) for s in range(n)]
+    texts = gen.map([(j["user"], j["system"], j["sample"], int(j["words"] * 2.2) + 150) for j in jobs])
+    texts = [MARKER_LINE.sub("", t).strip() for t in texts]
+    items, stats = _pick(cfg, jobs, texts, n, gen, ctx)
+    stats.update(adapter=adapter, tag=tag)
+    out_dir = Path(cfg["paths"]["eval"]) / "outputs" / name
+    if limit is None:
+        out_dir.mkdir(parents=True, exist_ok=True)
+        (out_dir / f"{part}.jsonl").write_text("".join(json.dumps(i, ensure_ascii=False) + "\n" for i in items))
+        (out_dir / f"{part}.stats.json").write_text(json.dumps(stats, indent=1))
+    return dict(stats, out=str(out_dir / f"{part}.jsonl"), items=items if limit else None)
+
+
 def run(cfg: dict, name: str, part: str, n: int = 4, ctx=None, gen=None, limit: int | None = None, ops=OPS) -> dict:
     from . import harness
 
@@ -135,27 +204,7 @@ def run(cfg: dict, name: str, part: str, n: int = 4, ctx=None, gen=None, limit: 
             texts = gen.map([(j["user"], j["system"], j["sample"], int(j["words"] * 2.2) + 150) for j in jobs])
         else:
             raise SystemExit(f"unknown baseline {name}")
-        ctx = ctx or harness.Context(cfg)
-        groups: dict = {}
-        for j, t in zip(jobs, texts):
-            groups.setdefault((j["id"], j["op"]), []).append((j, t))
-        items = []
-        for (cid, op), g_ in groups.items():
-            cands = [t for _, t in g_]
-            j = g_[0][0]
-            rr = rerank(ctx, cands, j["input"], j["words"], cid)
-            items.append(dict(id=cid, op=op, text=cands[rr["choice"]], input=j["input"], length_words=j["words"],
-                              fallback=rr["fallback"], candidates=cands, rerank=rr))
-        fails = [f for i in items for c in i["rerank"]["checks"] for f in c["fails"]]
-        stats = dict(n=len(items), samples=n, model=gen.model, new_calls=gen.calls,
-                     fallback_rate=round(sum(i["fallback"] for i in items) / max(1, len(items)), 4),
-                     candidate_fail_counts={f: fails.count(f) for f in sorted(set(fails))},
-                     candidates=len(texts))
-        if hasattr(gen, "cost"):
-            stats["cost_usd"] = round(gen.cost, 2)
-        if hasattr(gen, "peak_gb"):
-            stats.update(tokens=gen.tokens, tok_per_s=round(gen.tokens / max(1e-9, gen.seconds), 1),
-                         peak_gb=round(gen.peak_gb, 2))
+        items, stats = _pick(cfg, jobs, texts, n, gen, ctx)
     if limit is None:
         (out_dir / f"{part}.jsonl").write_text("".join(json.dumps(i, ensure_ascii=False) + "\n" for i in items))
         (out_dir / f"{part}.stats.json").write_text(json.dumps(stats, indent=1))
