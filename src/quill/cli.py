@@ -166,6 +166,11 @@ def _eval(args) -> int:
 def _pairs(args) -> int:
     from .pairs import build
 
+    if args.local:
+        from .pairs import local
+
+        print(local.run(config.load(args.config)))
+        return 0
     r = build.run(config.load(args.config), retries=args.retries)
     for part, v in r["splits"].items():
         print(f"{part}: {v['chunks']} chunks  A kept {v['A']['kept']}  B kept {v['B']['kept']}  both {v['both_share']:.1%}")
@@ -213,7 +218,8 @@ def _baseline(args) -> int:
 def _train(args) -> int:
     from . import train
 
-    r = train.run(config.load(args.config), args.name, stage=args.stage, passes=args.passes, resume=args.resume)
+    r = train.run(config.load(args.config), args.name, stage=args.stage, passes=args.passes, resume=args.resume,
+                  overrides=dict(learning_rate=args.lr) if args.lr else None)
     print(r)
     return r["exit"]
 
@@ -314,6 +320,7 @@ def main(argv: list[str] | None = None) -> int:
     a.set_defaults(fn=_inputs)
     a = sub.add_parser("pairs", help="build, curate and write the training pairs (paraphrases through Claude)")
     a.add_argument("--retries", type=int, default=1, help="regenerations of a failed paraphrase")
+    a.add_argument("--local", action="store_true", help="add the local half of form B: drafts from the untuned base")
     a.set_defaults(fn=_pairs)
     a = sub.add_parser("baseline", help="run a baseline (b0 Claude, b1 local base, b2 the input) and score it")
     a.add_argument("name", choices=["b0", "b1", "b2"])
@@ -322,9 +329,10 @@ def main(argv: list[str] | None = None) -> int:
     a.set_defaults(fn=_baseline)
     a = sub.add_parser("train", help="train an adapter with mlx-lm on a pairs stage")
     a.add_argument("name", help="adapter name under ~/.quill/adapters/")
-    a.add_argument("--stage", default="s1", choices=("s1", "s2", "s1p"))
+    a.add_argument("--stage", default="s1", choices=("s1", "s2", "s1p", "s2s", "s1ps", "s2m"))
     a.add_argument("--passes", type=float, default=1.0)
     a.add_argument("--resume", help="adapter to start from")
+    a.add_argument("--lr", type=float, help="learning rate; default is the config's")
     a.set_defaults(fn=_train)
     a = sub.add_parser("run", help="generate with a trained adapter on the eval inputs and score it")
     a.add_argument("name", help="system name for the outputs and report")

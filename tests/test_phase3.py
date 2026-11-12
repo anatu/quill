@@ -252,3 +252,27 @@ def test_plain_draft_redrafts_with_lost_items_and_keeps_the_best():
     worse = "A bakery sold loaves."
     base = _Base(["Dana Whitlock opened the bakery in 1987.", worse, worse])
     assert baselines.plain_draft(base, r, retries=2)[0].startswith("Dana Whitlock")     # fewest errors wins
+
+
+def test_local_half_replaces_the_claude_draft_only_when_it_passes(tmp_path):
+    cfg = _cfg(tmp_path)
+    rows = _scored()
+    rows[0]["draft_local"] = "LOCAL DRAFT"
+    rows[0]["checks"]["L"] = dict(fails=[])
+    rows[1]["draft_local"] = "BAD LOCAL"
+    rows[1]["checks"]["L"] = dict(fails=["meaning"])
+    out = to_mlx.write(cfg, rows)
+    s2 = [json.loads(x)["messages"][1]["content"] for x in (to_mlx.data_dir(cfg, "s2") / "train.jsonl").read_text().splitlines()]
+    s1 = (to_mlx.data_dir(cfg, "s1") / "train.jsonl").read_text()
+    assert "LOCAL DRAFT" in s2 and "BAD LOCAL" not in s2 and "LOCAL" not in s1
+    assert out["s2"]["local"]["train"] == 1 and out["s1"]["local"]["train"] == 0
+
+
+def test_strict_sets_drop_pairs_whose_target_loses_an_input_item(tmp_path):
+    cfg = _cfg(tmp_path)
+    rows = _scored()
+    kept = [r for r in rows if r["split"] == "train" and not r["checks"]["B"]["fails"]]
+    kept[0]["draft"] = kept[0]["draft"] + " It cost 7,431 dollars in Zanzibar."      # the target has neither
+    out = to_mlx.write(cfg, rows)
+    assert out["s2s"]["rows"]["train"] == out["s2"]["rows"]["train"] - 1 and out["s2s"]["strict"] and not out["s2"]["strict"]
+    assert out["s2m"]["rows"]["train"] == out["s1p"]["rows"]["train"] + out["s2"]["rows"]["train"]          # both forms

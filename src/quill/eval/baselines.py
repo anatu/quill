@@ -142,10 +142,16 @@ def plain_draft(base, r: dict, retries: int = 2) -> tuple[str, int]:
     """The untuned base drafts from the brief and facts. A draft that drops or adds a name, number
     or date is redrafted with those items named; the draft with the fewest errors is kept.
     Returns (draft, attempts)."""
+    return draft_from(base, prompt("write_draft", words=r["words"], brief=r["brief"], facts=r["facts"]),
+                      inputs.write_input(r), r["words"], retries)
+
+
+def draft_from(base, user: str, given: str, words: int, retries: int = 2) -> tuple[str, int]:
+    """plain_draft for any drafting prompt whose notes sit in a final REQUEST or NOTES block;
+    `given` is the text the draft is checked against."""
     from ..pairs.curate import lost_items
 
-    given, limit = inputs.write_input(r), int(r["words"] * 2.2) + 150
-    user = prompt("write_draft", words=r["words"], brief=r["brief"], facts=r["facts"])
+    limit = int(words * 2.2) + 150
     best, errs, ask = base.ask(user, None, 0, limit), None, user
     errs = _entity_errors(given, best)
     tries, last = 1, best
@@ -157,7 +163,7 @@ def plain_draft(base, r: dict, retries: int = 2) -> tuple[str, int]:
                       missing="These items from the notes must appear, written exactly as shown:\n"
                               + "\n".join(f"- {x}" for x in lost) + "\n" if lost else "",
                       added="These are not in the notes and must not appear: " + ", ".join(extra) + "\n" if extra else "")
-        head, sep, tail = user.partition("\n\nREQUEST:")
+        head, sep, tail = user.partition("\n\nREQUEST:" if "\n\nREQUEST:" in user else "\n\nNOTES:")
         ask = head + "\n\n" + note.strip() + sep + tail
         last = base.ask(ask, None, tries, limit)
         tries += 1

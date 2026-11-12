@@ -4,6 +4,148 @@ One entry per experiment or finding, newest first. Each entry says what was run,
 
 ---
 
+## 2026-11-12: The mixed adapter with the paraphrase tag passes the gates at N=4 and beats stage 1
+
+**Phase 5.** Report: `eval_reports/sft-v1-s2m-ptag-n4-dev.md`. `sft-v1-s2m` (from s1p, one pass over forms A and B joined), `paraphrase` tag, N=4, draft retry, gates as written (strict entity gate).
+
+| Dev, N=4 | s1p, paraphrase | s2m, paraphrase | s2, draft |
+|---|---|---|---|
+| Composite (95% CI) | 0.681 [0.61, 0.74] | 0.763 [0.70, 0.82] | 0.731 [0.65, 0.80] |
+| M1 accept (restyle / write) | 72.4% (67.5 / 77.6) | 85.1% (82.1 / 88.2) | 98.1% (96.2 / 100) |
+| M15 author / LLM | 62.8% / 23.7% | 83.1% / 9.1% | 91.6% / 1.9% |
+| M4 meaning | 0.889 | 0.896 | 0.873 |
+| Facts entailed (restyle / write) | 96.1% / 85.9% | 96.7% / 86.8% | 92.4% / 84.7% |
+| M5 entity pass | 92.7% | 89.5% | 79.8% |
+| Fallback (limit 15%) | 10.5% | 12.9% | 22.6% |
+| M9 final outputs flagged | 0 | 0 | 1 |
+| Candidates failing: entities / memorization (of 496) | 67 / 12 | 103 / 18 | 203 / 32 |
+| Words per paragraph (author 34) | 39 | 42 | 30 |
+| Sentence-length SD (author 9.3) | 7.1 | 7.4 | 7.9 |
+
+- **Paired, s2m minus s1p: +0.082 [+0.034, +0.133].** The CI excludes 0. Minus Qwen3-8B B1: +0.506 [+0.420, +0.599].
+- Fallback 12.9% (restyle 3 of 62, write 13 of 62); no final output carries an 8-word corpus span. Meaning is level with s1p.
+- By the follow-up plan's rule this replaces s1p as the best system, pending its recall probe (running). It has not been fused or speed-tested; unfused it decodes at 26.4 tok/s.
+- Caveat: this is the eighth adapter variant compared on dev. The gain is plausible (style up on both ops, gates held) but the selection is on dev; test confirms it once, in Phase 8.
+
+---
+
+## 2026-11-12: Mixed-form stage 2 makes the tag a fidelity dial; a style-fidelity frontier, no free win
+
+**Phase 5.** Reports: `eval_reports/sft-v1-{s2-mix30-n1,s2m-n1,s2m-ptag-n1}-dev.md`. All N=1 with the draft retry, on dev.
+
+- `sft-v1-s2-mix30`: adapter weights 0.7 × s1p + 0.3 × s2 (no training). Relative weight change s1p → s2 is small, so linear blending is reasonable.
+- `sft-v1-s2m`: from s1p, one pass over s1p + s2 joined (1,316 pairs, 82 updates), LR 5e-5. Val on the joined set 0.922 → 0.859 (low 0.762 at step 1280; noisy). Peak 13.46 GB, 182 minutes.
+
+| Dev, N=1 | Tag | Composite | M1 accept | M15 author / LLM | MIS restyle | M5 entity pass | Fallback | M9 flagged (max) |
+|---|---|---|---|---|---|---|---|---|
+| s1p | paraphrase | 0.565 [0.50, 0.63] | 67.3% | n/r | 0.915 | 86.3% | 17.7% | 2 (8) |
+| s2m | paraphrase | 0.625 [0.54, 0.70] | 83.1% | 76.6% / 13.0% | 0.921 | 78.2% | 26.6% | 4 (13) |
+| s2-mix30 | draft | 0.631 [0.55, 0.71] | 92.9% | 85.2% / 5.2% | 0.919 | 71.8% | 35.5% | 9 (11) |
+| s2m | draft | 0.568 [0.48, 0.65] | 98.0% | 94.2% / 0.7% | 0.879 | 61.3% | 46.8% | 12 (14) |
+| s2 | paraphrase | 0.586 [0.50, 0.67] | 99.4% | 94.2% / 0.6% | 0.856 | 63.7% | 43.5% | 8 (14) |
+| s2 | draft | 0.501 [0.41, 0.59] | 96.7% | n/r | 0.869 | 54.0% | 53.2% | 8 (14) |
+
+- **These points lie on one frontier.** Every step toward the author's style costs entity pass, and raises verbatim spans. Nothing here beats s1p on the gates; nothing beats it on the composite with a CI clear of 0 (s2m paraphrase +0.059 [-0.025, +0.137]; mix30 +0.066 [-0.017, +0.146]).
+- **With both forms in training, the tag works as a dial.** In s2m, `paraphrase` gives 78% entity pass and 83% M1; `draft` gives 61% and 98%. In s2 (form B only) the tag did almost nothing.
+- **Memorization rises with style** in every stage 2 variant: 4 to 13 of 124 single candidates flagged, against 2 for s1p. Candidates are filtered by the gate, so this shows up as fallback.
+- N=1 exaggerates fallback: s1p went from 17.7% at N=1 to 10.5% at N=4, s2 from 53.2% to 22.6%.
+
+**Much of the entity "loss" is a change of form, not of fact.** First candidates rechecked with the Phase 3 form-tolerant check (`curate.closure`, both ways: number as word, percent sign, acronym, capitalized ordinary word), against the strict eval gate:
+
+| Dev, first candidate | Restyle: strict fail | Restyle: tolerant fail | Write: strict fail | Write: tolerant fail |
+|---|---|---|---|---|
+| B1 (untuned base) | 4 | 4 | 11 | 10 |
+| s1p, paraphrase tag | 3 | 0 | 14 | 8 |
+| s2m, paraphrase tag | 14 | 1 | 13 | 11 |
+| s2-mix30, draft tag | 14 | 7 | 21 | 16 |
+| s2m, draft tag | 21 | 11 | 28 | 17 |
+| s2, draft tag | 31 | 21 | 26 | 20 |
+
+(of 62 inputs each)
+
+- For **s2m with the paraphrase tag**, 13 of its 14 strict restyle failures are form changes. Under the tolerant check it fails 12 of 124 (9.7%), close to s1p's 8 (6.5%). The write-op failures that remain are mostly the drafter's (as before).
+- For **s2 and s2m with the draft tag** the loss is real: 21 and 11 restyle outputs fail even the tolerant check.
+- The author re-forms figures himself, and the training targets show it. A gate that rejects every re-formed figure rejects part of the voice. Whether H7 should be form-tolerant is the user's call (see followup.md). The gate is unchanged.
+
+**Running:** s2m with the `paraphrase` tag at N=4. It passes if fallback is at most 15%, no final output is flagged by M9, and the composite CI against `sft-v1-s1p-n4r` (0.681) is above 0.
+
+---
+
+## 2026-11-11: Strict-pair filtering does not fix stage 2; ten updates of form B are enough to flip it
+
+**Phase 5.** Reports: `eval_reports/sft-v1-{s1p-n1r,s2-n1,s2s-n1,s2-i160-n1}-dev.md`. All N=1 with the draft retry; s1p uses the `paraphrase` tag, the others `draft`.
+
+`sft-v1-s2s`: from `sft-v1-s1p`, 338 strict-pass form B pairs, two passes (676 micro-batches), LR 5e-5. Val 1.308 → 1.156; last train loss 0.917; peak 12.69 GB.
+
+| Dev, N=1 | s1p | s2 step 160 | s2 final | s2s |
+|---|---|---|---|---|
+| Composite | 0.565 [0.50, 0.63] | 0.500 [0.42, 0.58] | 0.501 [0.41, 0.59] | 0.543 [0.46, 0.63] |
+| M1 accept | 67.3% | 90.2% | 96.7% | 98.1% |
+| M15 author / LLM | n/r | 85.0% / 3.9% | n/r | 91.0% / 0.6% |
+| MIS restyle (mean) | 0.915 | 0.829 | 0.869 | 0.857 |
+| Facts entailed (restyle / write) | 96.7% / 86.6% | 88.0% / 84.0% | 89.7% / 86.2% | 90.6% / 82.4% |
+| M5 entity pass | 86.3% | 59.7% | 54.0% | 60.5% |
+| Fallback | 17.7% | 46.0% | 53.2% | 47.6% |
+| M9 flagged (max span) | 2 (8) | 4 (9) | 8 (14) | 13 (14) |
+
+(n/r: not read off the report for this table.)
+
+- **The strict filter is not the fix.** Entity-failing outputs: s2 57, s2s 49, s1p 17. The pair-level finding in the entry below is true but explains little of the loss.
+- **s2s copies more:** 13 of 124 outputs flagged. Two passes over 338 pairs is the likely cause. Rejected.
+- **Step 160 already has the whole effect.** That is 10 optimizer updates at a warming-up LR. Style jumps to 90% and entity pass falls to 60%. So this is not slow drift or over-training; a lighter stage 2 will not help.
+- **Working hypothesis:** the trade-off sits in the task, not the dose. A draft differs from the author's passage in order and structure, so `draft → author` licenses free rewriting, and items fall out. A paraphrase tracks the passage sentence by sentence, so `paraphrase → author` stays close and keeps items, at the cost of weaker style change. The eval's restyle inputs are Claude drafts in both cases; only the tag and the training differ.
+- **The tag is not a fidelity dial.** s2 with the `paraphrase` tag at N=1 (`sft-v1-s2-ptag-n1`): M1 99.4%, M15 author 94.2% / LLM 0.6%, entity pass 63.7%, fallback 43.5%, MIS restyle 0.856, M9 flagged 8 (max 14), composite 0.586 [0.50, 0.67]; minus s1p +0.021 [-0.076, +0.111]. Stage 2 moved the whole adapter; the tag changes little.
+- **Queue (running overnight, all local, N=1):** (1) `sft-v1-s2-mix30`: adapter weights 70% s1p + 30% s2, `draft` tag, to see whether a point between them keeps entities with more style; (2) `sft-v1-s2m`: from s1p, one pass over s1p + s2 joined (1,316 pairs), LR 5e-5; scored with the `draft` tag and the `paraphrase` tag.
+
+---
+
+## 2026-11-11: Stage 2 nearly closes the style gap but drops entities; fallback gate fails
+
+**Phase 5 (stage 2).** Reports: `eval_reports/sft-v1-s2-n4-dev.md`. Follow-up queue: [followup.md](followup.md).
+
+**Local half of form B** (`quill pairs --local`, `pairs/local.py`). The untuned base drafted 356 marker-free chunks from their fact lists with the Claude draft prompt and the lost-item retry (86 redrafted). 331 pass curation (fails: meaning 16, closure 11). `sft-v1-s2`: 641 train pairs, 296 local (46%); 59 valid, 35 local. Chunks with markers keep Claude drafts. No Claude calls.
+
+**Training** (`sft-v1-s2`): resumed from `sft-v1-s1p`, LR 5e-5 cosine, one pass (641 micro-batches). Val 1.259 → 1.135, flat and noisy after step 160 (1.139, 1.142, 1.066, 1.096). Peak 12.83 GB, 86 minutes.
+
+| Dev, N=4, draft retry | sft-v1-s1p (`paraphrase` tag) | sft-v1-s2 (`draft` tag) |
+|---|---|---|
+| Composite (95% CI) | 0.681 [0.61, 0.74] | 0.731 [0.65, 0.80] |
+| M1 accept (restyle / write) | 72.4% (67.5 / 77.6) | 98.1% (96.2 / 100) |
+| M15 author / LLM | 62.8% / 23.7% | 91.6% / 1.9% |
+| M4 meaning | 0.889 | 0.873 |
+| MIS restyle (mean) | 0.919 | 0.898 |
+| Facts entailed (restyle / write) | 96.1% / 85.9% | 92.4% / 84.7% |
+| M5 entity pass | 92.7% | 79.8% |
+| Fallback (limit 15%) | 10.5% | 22.6% |
+| Candidates failing: entities / memorization | 67 / 12 of 496 | 203 / 32 of 496 |
+| M9 final outputs flagged (max span) | 0 | 1 (11) |
+| Words per paragraph (author 34) | 39 | 30 |
+| Sentence-length SD (author 9.3) | 7.1 | 7.9 |
+| M7 vocab × | 3.27 | 1.57 |
+
+- Paired, s2 minus s1p: +0.050 [-0.033, +0.134]. Not significant: the style gain is cancelled by outputs that fail the entity gate.
+- **Style is at the author's ceiling.** The verifier accepts 94.8% of the author's own held-out passages; it accepts 98.1% of s2's. M15 calls 1.9% LLM.
+- **The adapter itself now loses entities.** Restyle: 106 of 248 candidates fail the entity check (s1p: 16); 14 of 62 inputs fall back (s1p: 0). Missing numbers dominate (121 in restyle, 91 in write), then missing names. Form B curation checks that the target adds nothing; it is form-tolerant, and it does not require the target to keep every item of the draft. The adapter may have learned to re-form or drop figures. Not confirmed.
+- **Gates:** fallback fails (22.6%); H8 output half fails (1 output, 11 words). So s2 as trained does not replace s1p.
+- **Rebuilt spans are not training leakage.** Share of outputs with an 8+ word span from their own held-out post, not supplied by the input: B0 102 of 124, B1 10, s1p 61, s2 85. Of s2's 85, 79 occur only in the item's own post, 6 also in a train chunk. Prompted Opus rebuilds more than either adapter, so the fact lists pin the wording. Median share of an output's 8-grams involved: B0 2.0%, s2 1.4%, s1p 0.7%.
+
+**Root cause found: the training pairs teach it.** The eval's strict entity gate, run on the kept training pairs (input against target, both ways):
+
+| Train pairs | n | Fail the strict gate | Items missing from the target | Items the target adds |
+|---|---|---|---|---|
+| A: paraphrase → target | 675 | 207 (31%) | 54 names, 51 numbers, 16 dates | 182 names, 31 numbers |
+| B: Claude draft → target | 345 | 171 (50%) | 52 names, 108 numbers, 4 dates | 112 names, 39 numbers |
+| B: local draft → target | 296 | 132 (45%) | 27 names, 138 numbers, 3 dates | 51 names, 16 numbers |
+
+- Phase 3 curation used a form-tolerant, one-way closure check (the target adds nothing). That was right for "no invented facts", but it lets through pairs where the input has a figure the target lacks or writes another way. Half of form B shows the adapter exactly the behaviour the eval gate rejects.
+- Form A is cleaner (31%), which fits s1p's 16 failing restyle candidates against s2's 106.
+
+**Fix under test:** `sft-v1-s2s` and `sft-v1-s1ps` (`pairs/to_mlx.py`, `STRICT`) keep only pairs that pass the strict gate: 338 of 641 form B pairs (164 local), 468 of 675 form A. `sft-v1-s2s` trains from `sft-v1-s1p` at LR 5e-5 for two passes, which matches s2's number of optimizer steps on half the data.
+
+**Queue (running, N=1 with draft retry):** `sft-v1-s1p-n1r` and `sft-v1-s2-n1` from cache as baselines; train and score `sft-v1-s2s`; then the step-160 checkpoint of s2.
+
+---
+
 ## 2026-11-11: Fusing into 4-bit erases the adapter; a 6-bit fused copy holds style at 30 tok/s
 
 **Phase 4.** Reports: `eval_reports/sft-v1-s1p-fused-n4-dev.md`, `sft-v1-s1p-fused8-dev.md`, `sft-v1-s1p-fused6-dev.md`. All runs use the draft retry. `quill run --fused PATH` generates from a merged model.
