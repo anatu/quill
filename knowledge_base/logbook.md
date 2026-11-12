@@ -24,7 +24,8 @@ One entry per experiment or finding, newest first. Each entry says what was run,
 
 - **Paired, s2m minus s1p: +0.082 [+0.034, +0.133].** The CI excludes 0. Minus Qwen3-8B B1: +0.506 [+0.420, +0.599].
 - Fallback 12.9% (restyle 3 of 62, write 13 of 62); no final output carries an 8-word corpus span. Meaning is level with s1p.
-- By the follow-up plan's rule this replaces s1p as the best system, pending its recall probe (running). It has not been fused or speed-tested; unfused it decodes at 26.4 tok/s.
+- **Recall probe with s2m loaded** (`eval_reports/recall-probe-sft-v1-s2m-dev.md`): 3 of 186 prompts at or over the gate, max 9 words (untuned base: 4, max 9). H8's probe half passes. Rebuilt spans (reported, not gated): 49 prompts, 43 on the paraphrase arm, max 17 (s1p: 32, max 15).
+- By the follow-up plan's rule this replaces s1p as the best system. It has not been fused or speed-tested; unfused it decodes at 26.4 tok/s.
 - Caveat: this is the eighth adapter variant compared on dev. The gain is plausible (style up on both ops, gates held) but the selection is on dev; test confirms it once, in Phase 8.
 
 ---

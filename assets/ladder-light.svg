@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 328" width="860" height="328" role="img" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif"><title>Authorship check accept rate by system</title><desc>Horizontal bars: The author's own held-out essays 94.8%; quill: fine-tuned 8B, on a laptop 85.1%; Claude Opus + style guide + 5 real passages 23.7%; Same 8B model, not fine-tuned 21.4%; Other human essayists 5.0%; A plain assistant draft 0.0%</desc>
+<text x="0" y="20" font-size="16" font-weight="600" fill="#0b0b0b">How often does an authorship check say "that is the author"?</text>
+<text x="0" y="40" font-size="12.5" fill="#52514e">Share of passages accepted, on topics the check never saw. Dev split.</text>
+<line x1="318.0" y1="54" x2="318.0" y2="294" stroke="#e1e0d9" stroke-width="1"/>
+<text x="318.0" y="312" font-size="11.5" fill="#898781" text-anchor="middle">0%</text>
+<line x1="429.5" y1="54" x2="429.5" y2="294" stroke="#e1e0d9" stroke-width="1"/>
+<text x="429.5" y="312" font-size="11.5" fill="#898781" text-anchor="middle">25%</text>
+<line x1="541.0" y1="54" x2="541.0" y2="294" stroke="#e1e0d9" stroke-width="1"/>
+<text x="541.0" y="312" font-size="11.5" fill="#898781" text-anchor="middle">50%</text>
+<line x1="652.5" y1="54" x2="652.5" y2="294" stroke="#e1e0d9" stroke-width="1"/>
+<text x="652.5" y="312" font-size="11.5" fill="#898781" text-anchor="middle">75%</text>
+<line x1="764.0" y1="54" x2="764.0" y2="294" stroke="#e1e0d9" stroke-width="1"/>
+<text x="764.0" y="312" font-size="11.5" fill="#898781" text-anchor="middle">100%</text>
+<text x="306" y="78.5" font-size="13" text-anchor="end" fill="#52514e" font-weight="400">The author's own held-out essays</text>
+<path d="M318.0,64.0 h418.9 a4,4 0 0 1 4,4 v12.0 a4,4 0 0 1 -4,4 h-418.9 z" fill="#52514e"/>
+<text x="748.9" y="78.5" font-size="13" font-weight="600" fill="#0b0b0b">94.8%</text>
+<text x="306" y="118.5" font-size="13" text-anchor="end" fill="#0b0b0b" font-weight="600">quill: fine-tuned 8B, on a laptop</text>
+<path d="M318.0,104.0 h375.4 a4,4 0 0 1 4,4 v12.0 a4,4 0 0 1 -4,4 h-375.4 z" fill="#2a78d6"/>
+<text x="705.4" y="118.5" font-size="13" font-weight="600" fill="#0b0b0b">85.1%</text>
+<text x="306" y="158.5" font-size="13" text-anchor="end" fill="#52514e" font-weight="400">Claude Opus + style guide + 5 real passages</text>
+<path d="M318.0,144.0 h101.8 a4,4 0 0 1 4,4 v12.0 a4,4 0 0 1 -4,4 h-101.8 z" fill="#c3c2b7"/>
+<text x="431.8" y="158.5" font-size="13" font-weight="600" fill="#0b0b0b">23.7%</text>
+<text x="306" y="198.5" font-size="13" text-anchor="end" fill="#52514e" font-weight="400">Same 8B model, not fine-tuned</text>
+<path d="M318.0,184.0 h91.6 a4,4 0 0 1 4,4 v12.0 a4,4 0 0 1 -4,4 h-91.6 z" fill="#c3c2b7"/>
+<text x="421.6" y="198.5" font-size="13" font-weight="600" fill="#0b0b0b">21.4%</text>
+<text x="306" y="238.5" font-size="13" text-anchor="end" fill="#52514e" font-weight="400">Other human essayists</text>
+<path d="M318.0,224.0 h18.3 a4,4 0 0 1 4,4 v12.0 a4,4 0 0 1 -4,4 h-18.3 z" fill="#c3c2b7"/>
+<text x="348.3" y="238.5" font-size="13" font-weight="600" fill="#0b0b0b">5.0%</text>
+<text x="306" y="278.5" font-size="13" text-anchor="end" fill="#52514e" font-weight="400">A plain assistant draft</text>
+<rect x="318.0" y="264.0" width="1.5" height="20" fill="#c3c2b7"/>
+<text x="326.0" y="278.5" font-size="13" font-weight="600" fill="#0b0b0b">0.0%</text>
+<line x1="318" y1="54" x2="318" y2="294" stroke="#c3c2b7" stroke-width="1"/>
+</svg>
