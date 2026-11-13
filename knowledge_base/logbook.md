@@ -4,6 +4,40 @@ One entry per experiment or finding, newest first. Each entry says what was run,
 
 ---
 
+## 2026-11-13: Against vanilla Claude on new material, the voice is distinct only in the stylish mode, and it does not suit informational prose
+
+**Goal change (user, 2026-11-13).** Near term: outputs a reader clearly prefers to generic AI writing. Matching a human author is a later goal. Real-vs-quill blind reads are deferred; vanilla-Claude-vs-quill is the comparison that matters now.
+
+**Setup** (`scripts/compare_examples.py`; pairs in `~/.quill/examples/`, not published). Claude Opus writes each brief with no style instruction. Quill (6-bit fused `sft-v1-s2m`, N=4, the usual gates and rerank) restyles that same draft, once with the `paraphrase` tag (faithful) and once with `draft` (stylish). Two sets of four briefs, none from the author's material: essay-like topics (estimates, a meeting, user interviews, saving early) and informational ones (a news summary, why the sky is blue, binary search, a sum-of-odd-numbers proof). Eight pairs is a look, not a measurement.
+
+| | Vanilla Claude | Quill, faithful | Quill, stylish |
+|---|---|---|---|
+| M1 accepts, essay briefs | 0 of 4 | 2 of 4 | 4 of 4 |
+| M1 probability, essay briefs (threshold 0.30) | 0.00-0.02 | 0.13-0.37 | 0.45-0.82 |
+| M1 accepts, informational briefs | 0 of 4 | 1 of 4 | 4 of 4 |
+| M1 probability, informational briefs | 0.01-0.06 | 0.08-0.90 | 0.57-0.94 |
+| Passed every gate, essay / informational | | 4 / 4 | 3 / 4 of 4 |
+| Paragraphs per piece, essay briefs | 3.3 | 5.3 | 5.5 |
+
+What a read of the outputs showed:
+
+- **Faithful mode is a light edit of an Opus draft.** Shorter paragraphs, contractions, dashes, an occasional one-line beat. On the news summary it is close to a copy-edit. Opus's plain drafts are cleaner than the eval's generic drafts, so there is less to change. A reader would not clearly prefer either.
+- **Stylish mode is a different voice**: short declaratives, a question as a paragraph, second person, a direct close. This is the differentiation wanted.
+- **Stylish mode makes meaning errors on new material.** Seen in eight outputs: a wrong time reference, a garbled sentence, a nonsense filler pair, "five" turned into "fifty" (caught by the entity gate: fallback), "run long" turned into "last long", and "exponentially" used for a gap that is not exponential. Faithful mode drifts less but not zero: an added judgment word, a switch from "the team" to "we", one wrong "exponentially".
+- **The dev numbers did not predict this.** Dev inputs are generic drafts of the author's own content, where the adapter can lean on familiar material. On unfamiliar content the stylish mode's fluency drops.
+- **User's reaction to the essay set:** the outputs read like short stories or proverbs, not informational prose. The author's signature moves (an anecdote, then a short moral) have nowhere to go in a walkthrough or a summary. On informational briefs the stylish mode's shift is real but modest.
+
+**Conclusions**
+
+1. The corpus sets the register. An essayist's voice transfers poorly to summaries and walkthroughs. For informational writing the corpus should be informational writing.
+2. "Clearly preferred to generic AI writing" does not need a single named author. A corpus of good human explanatory prose, openly licensed, would serve it and removes the consent and passing-off questions.
+3. The M1 verifier measures closeness to this author, which is no longer the near-term goal. A preference measure against vanilla Claude is needed: a pairwise judge and then human picks.
+4. Publishing quill outputs in the README is still blocked: `scope.yaml` has `outputs_leave_mac: unknown`.
+
+**Next:** research the best corpus for informational content (licence first, then register, size and voice consistency). The current adapter and pipeline stay as built.
+
+---
+
 ## 2026-11-12: The 6-bit fused copy of s2m holds at N=4 and clears the speed gate
 
 **Phase 5.** Report: `eval_reports/sft-v1-s2m-fused6-n4-dev.md`. `sft-v1-s2m` fused with `mlx_lm fuse --dequantize`, then `mlx_lm convert -q --q-bits 6` (6.5 bits per weight, 6.2 GB on disk). `paraphrase` tag, N=4, draft retry.
@@ -33,7 +67,18 @@ One entry per experiment or finding, newest first. Each entry says what was run,
 - 7 of the fused copy's 8 flagged spans occur in a train chunk (5 in one post, 2 in two posts); 1 in another dev post. So this is recall of training text, not reconstruction.
 - The loaded adapter and the fused copy are the same weights up to quantization, so they sample differently from one seed. 8 against 4 of 186 is within what one sample per prompt can produce by chance; a 14-word span against 9 is not reassuring. One sample per prompt cannot settle whether fusing raised recall or the unfused 3 was a lucky draw.
 - In the eval itself the memorization gate still holds for the fused copy: 23 of 496 candidates carry a span and are dropped; 0 of 124 final outputs do.
-- **Open:** resample the probe (3 samples per prompt for base, loaded and fused) before calling H8 on this build either way.
+- **Resampled 2026-11-13** (`quill recall --samples 3`; reports `eval_reports/recall-probe-{base,sft-v1-s2m,qwen3-8b-sft-v1-s2m-fused-6bit}-x3-dev.md`). 558 prompts each:
+
+| Recall probe ×3, dev | Flagged | Rate | Max span | Summary / paraphrase / opening | Rebuilt flagged |
+|---|---|---|---|---|---|
+| Untuned base | 9 | 1.6% | 9 | 3 / 0 / 6 | 5 |
+| s2m, adapter loaded | 15 | 2.7% | 9 | 3 / 8 / 4 | 138 |
+| s2m, fused 6-bit | 17 | 3.0% | 14 | 5 / 9 / 3 | 141 |
+
+- **Fusing is not the cause.** Fused against loaded: 17 and 15 of 558 (Fisher p 0.86). The first run's 8 against 3 was sampling.
+- **The adapter does raise recall a little, on the paraphrase arm.** There the base produces none and the adapter 8-9 of 186. Overall 2.7-3.0% against 1.6%; with these counts that is not significant (pooled adapter against base, p 0.13), but the direction is the same in both builds and the arm is the trained task.
+- Nearly all flagged spans are 8-9 words. The fused copy has three longer ones (10, 11, 14).
+- **H8's probe half, read strictly ("no longer than the base's"), is not met:** the rate is higher and one span is longer. Read as "no significant rise", it is met. This is the user's call. The inference-time gate catches these spans either way (0 of 124 final outputs flagged in every s2m run).
 
 ---
 

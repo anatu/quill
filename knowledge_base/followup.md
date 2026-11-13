@@ -36,6 +36,15 @@ Caveats on 0a: two passes over 338 pairs raises memorization risk; watch M9 and 
 
 A cleaner long-term fix is to repair the pairs instead of dropping them: regenerate the failing drafts so each carries exactly the target's items (Claude calls for the Claude half; local for the local half). Needs a decision on the Claude spend.
 
+## Update, 2026-11-13: goal change
+
+The near-term goal is now clear preference over generic AI writing on informational content (summaries, walkthroughs), not matching one author. See the logbook entry of this date. Consequences:
+
+- The blind real-vs-quill read is deferred. A vanilla-Claude-vs-quill preference test replaces it as the next human check.
+- A new corpus of informational prose is being researched. Options on the table: one openly licensed explainer; a multi-author corpus of good human explanatory writing (recommended); the user's own writing.
+- The H8 wording, the entity-gate form question and the cleanup below still stand, but they are no longer blocking anything.
+- Recall probe resample (558 prompts each): base 1.6% flagged, adapter loaded 2.7%, fused 3.0%; fusing is not the cause.
+
 ## Update, 2026-11-12 early morning
 
 What the night's runs showed (all in the logbook):
