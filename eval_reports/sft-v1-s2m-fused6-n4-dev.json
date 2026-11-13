@@ -1,0 +1,188 @@
+{
+ "system": "sft-v1-s2m-fused6-n4",
+ "split": "dev",
+ "generated": "2026-11-12T09:18:01",
+ "split_hash": "bec0e58ea4a7386fc3e6c17de1d62831d92e31e5bb672405f4f6c6f048dda92f",
+ "scores": {
+  "n_items": 124,
+  "n_passages": 156,
+  "words": 43686,
+  "M1_av": {
+   "accept_rate": 0.891,
+   "mean_prob": 0.6601
+  },
+  "M15_attribution": {
+   "author": 0.8141,
+   "lamade": 0.0064,
+   "llm": 0.0962,
+   "other": 0.0833
+  },
+  "M6_tic_profile": {
+   "n_pools": 19,
+   "features": {
+    "sent_len_mean": {
+     "value": 15.123,
+     "reference": 14.714,
+     "z": 0.33,
+     "share_abs_z_gt_2": 0.0
+    },
+    "sent_len_sd": {
+     "value": 7.358,
+     "reference": 9.326,
+     "z": -2.32,
+     "share_abs_z_gt_2": 0.74
+    },
+    "words_per_para": {
+     "value": 37.301,
+     "reference": 33.735,
+     "z": 0.74,
+     "share_abs_z_gt_2": 0.11
+    },
+    "one_sent_para_share": {
+     "value": 0.414,
+     "reference": 0.42,
+     "z": -0.15,
+     "share_abs_z_gt_2": 0.05
+    },
+    "sp_per_1k": {
+     "value": 29.292,
+     "reference": 24.575,
+     "z": 0.39,
+     "share_abs_z_gt_2": 0.0
+    },
+    "emdash_per_1k": {
+     "value": 3.725,
+     "reference": 5.793,
+     "z": -0.9,
+     "share_abs_z_gt_2": 0.05
+    },
+    "colon_per_1k": {
+     "value": 4.483,
+     "reference": 6.168,
+     "z": -0.49,
+     "share_abs_z_gt_2": 0.0
+    },
+    "semicolon_per_1k": {
+     "value": 1.517,
+     "reference": 0.862,
+     "z": 1.0,
+     "share_abs_z_gt_2": 0.32
+    },
+    "paren_per_1k": {
+     "value": 0.368,
+     "reference": 0.874,
+     "z": -0.52,
+     "share_abs_z_gt_2": 0.0
+    },
+    "question_per_100s": {
+     "value": 1.46,
+     "reference": 3.561,
+     "z": -0.95,
+     "share_abs_z_gt_2": 0.0
+    },
+    "mattr500": {
+     "value": 0.512,
+     "reference": 0.545,
+     "z": 0.09,
+     "share_abs_z_gt_2": 0.05
+    }
+   },
+   "max_abs_z": 2.32
+  },
+  "M6_delta": {
+   "delta": 0.934,
+   "sd": 0.075,
+   "words": 4000
+  },
+  "M2_styledistance_delta": {
+   "mean": 0.0757,
+   "sd": 0.0325
+  },
+  "M2_classifier": {
+   "accept_rate": 0.9872
+  },
+  "M7_lexicon": {
+   "vocabulary": {
+    "per_1k": 1.747,
+    "author_per_1k": 0.84,
+    "ratio": 2.08
+   },
+   "structure": {
+    "per_1k": 4.415,
+    "author_per_1k": 3.049,
+    "ratio": 1.45
+   },
+   "artifacts": {
+    "hits": 0
+   }
+  },
+  "M8_signature": {
+   "per_1k": 19.577,
+   "author_per_1k": 24.097,
+   "ratio": 0.81
+  },
+  "M9_memorization": {
+   "max_span": 0,
+   "flagged": 0,
+   "n": 124,
+   "target_rebuilt": {
+    "max_span": 17,
+    "median_span": 9,
+    "at_or_over_gate": 87
+   }
+  },
+  "M5_entities": {
+   "pass_rate": 0.9113,
+   "n": 124,
+   "missing": 10,
+   "added": 2
+  },
+  "M4_meaning": {
+   "mis_restyle": {
+    "mean": 0.9258,
+    "median": 0.9425,
+    "n": 62
+   },
+   "facts_entailed": {
+    "restyle": 0.9667,
+    "write": 0.8718
+   },
+   "m4": 0.8988
+  },
+  "composite": {
+   "axes": [
+    "m1",
+    "m15",
+    "m4"
+   ],
+   "value": 0.7821,
+   "ci95": [
+    0.7303,
+    0.8352
+   ],
+   "chunks": 62,
+   "axis_means": {
+    "m1": 0.9032,
+    "m15": 0.8065,
+    "m4": 0.8988
+   },
+   "gate_pass": 0.9113
+  },
+  "fallback_rate": 0.0968,
+  "M1_by_op": {
+   "restyle": 0.8734,
+   "write": 0.9091
+  },
+  "M12_length": {
+   "within_30pct": 0.9919,
+   "n": 124
+  }
+ },
+ "not_implemented": [
+  "M13 alpha",
+  "M14 residue (both Phase 2b)"
+ ],
+ "dropped": [
+  "M10 Fast-DetectGPT: fails sanity on dev (eval_reports/m10-dev.md)"
+ ]
+}

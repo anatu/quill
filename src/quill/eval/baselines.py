@@ -272,7 +272,8 @@ def first_sentences(text: str, min_words: int = 12) -> str:
     return " ".join(out)
 
 
-def recall_probe(cfg: dict, part: str = "dev", gen=None, ctx=None, limit: int | None = None, name: str = "base") -> dict:
+def recall_probe(cfg: dict, part: str = "dev", gen=None, ctx=None, limit: int | None = None, name: str = "base",
+                 samples: int = 1) -> dict:
     """Ask a model for the author's held-out text three ways (a summary, a neutral paraphrase,
     the opening line) and record the longest verbatim span the prompt did not supply. Spans from
     the corpus outside the item's own post are recall and are gated (H8). Spans from the item's
@@ -297,12 +298,14 @@ def recall_probe(cfg: dict, part: str = "dev", gen=None, ctx=None, limit: int | 
                       user=prompt("probe_paraphrase", author=author, input=r["draft"])),
                  dict(id=r["id"], kind="opening", given=op,
                       user=prompt("probe_opening", author=author, words=r["words"], opening=op))]
-    outs = gen.map([(j["user"], None, 0, int(next(r["words"] for r in rows if r["id"] == j["id"]) * 2.2) + 150)
-                    if hasattr(gen, "peak_gb") else (j["user"],) for j in jobs])
+    words = {r["id"]: r["words"] for r in rows}
+    jobs = [dict(j, sample=k) for k in range(samples) for j in jobs]      # more samples per prompt: a steadier rate
+    outs = gen.map([(j["user"], None, j["sample"], int(words[j["id"]] * 2.2) + 150)
+                    if hasattr(gen, "peak_gb") else (j["user"],) for j in jobs])       # only the local model resamples
     res = []
     for j, o in zip(jobs, outs):
         span, rebuilt = ctx.spans(o, j["given"], j["id"])
-        res.append(dict(id=j["id"], kind=j["kind"], span=span, rebuilt=rebuilt, output_words=len(o.split())))
+        res.append(dict(id=j["id"], kind=j["kind"], sample=j["sample"], span=span, rebuilt=rebuilt, output_words=len(o.split())))
     by = {}
     for k in ("summary", "paraphrase", "opening"):
         s = sorted(r["span"] for r in res if r["kind"] == k)
@@ -311,10 +314,12 @@ def recall_probe(cfg: dict, part: str = "dev", gen=None, ctx=None, limit: int | 
                      median_span=s[len(s) // 2] if s else 0, rebuilt_max=t[-1] if t else 0,
                      rebuilt_flagged=sum(x >= ctx.memo.n for x in t))
     rep = dict(system=f"recall-probe:{name}", model=gen.model, split=part, generated=time.strftime("%Y-%m-%dT%H:%M:%S"),
-               gate_words=ctx.memo.n, prompts=len(res), max_span=max((r["span"] for r in res), default=0),
+               gate_words=ctx.memo.n, prompts=len(res), samples=samples, max_span=max((r["span"] for r in res), default=0),
                flagged=sum(r["span"] >= ctx.memo.n for r in res),
                rebuilt_max=max((r["rebuilt"] for r in res), default=0),
                rebuilt_flagged=sum(r["rebuilt"] >= ctx.memo.n for r in res), by_kind=by)
+    if samples > 1:
+        name = f"{name}-x{samples}"
     if limit is None:
         d = Path(cfg["paths"]["eval"]) / "recall"
         d.mkdir(parents=True, exist_ok=True)

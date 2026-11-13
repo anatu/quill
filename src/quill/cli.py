@@ -270,7 +270,13 @@ def _recall(args) -> int:
         from .gen.local import Local
 
         gen = Local(cfg, adapter=train.adapter_dir(cfg, args.adapter))
-    r = baselines.recall_probe(cfg, args.split, gen=gen, name=args.adapter or "base")
+    name = args.adapter or "base"
+    if args.fused:
+        from .gen.local import Local
+
+        gen = Local(dict(cfg, gen=dict(cfg.get("gen", {}), base_model=args.fused)))
+        name = gen.model
+    r = baselines.recall_probe(cfg, args.split, gen=gen, name=name, samples=args.samples)
     print(f"{r['model']} on {args.split}: {r['prompts']} prompts  max span {r['max_span']} words  "
           f"at or over {r['gate_words']}: {r['flagged']}")
     print(f"by prompt: {r['by_kind']}")
@@ -359,6 +365,8 @@ def main(argv: list[str] | None = None) -> int:
     a = sub.add_parser("recall", help="recall probe: longest verbatim spans from the local base, untuned or with an adapter")
     a.add_argument("--split", choices=["dev", "test"], default="dev")
     a.add_argument("--adapter", help="probe the base with this adapter loaded")
+    a.add_argument("--fused", help="probe a fused copy of the base at this path")
+    a.add_argument("--samples", type=int, default=1, help="generations per prompt")
     a.set_defaults(fn=_recall)
     a = sub.add_parser("gate", help="show the Phase 1 exit gate")
     a.set_defaults(fn=_gate)

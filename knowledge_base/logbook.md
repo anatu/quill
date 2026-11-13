@@ -4,6 +4,39 @@ One entry per experiment or finding, newest first. Each entry says what was run,
 
 ---
 
+## 2026-11-12: The 6-bit fused copy of s2m holds at N=4 and clears the speed gate
+
+**Phase 5.** Report: `eval_reports/sft-v1-s2m-fused6-n4-dev.md`. `sft-v1-s2m` fused with `mlx_lm fuse --dequantize`, then `mlx_lm convert -q --q-bits 6` (6.5 bits per weight, 6.2 GB on disk). `paraphrase` tag, N=4, draft retry.
+
+| Dev, N=4 | s2m, adapter loaded (4-bit base) | s2m, fused 6-bit |
+|---|---|---|
+| Composite (95% CI) | 0.763 [0.70, 0.82] | 0.782 [0.73, 0.84] |
+| M1 accept (restyle / write) | 85.1% (82.1 / 88.2) | 89.1% (87.3 / 90.9) |
+| M15 author / LLM | 83.1% / 9.1% | 81.4% / 9.6% |
+| M4 meaning | 0.896 | 0.899 |
+| M5 entity pass | 89.5% | 91.1% |
+| Fallback | 12.9% | 9.7% |
+| M9 final outputs flagged | 0 | 0 |
+| Tok/s over the run | 26.4 | 32.5 |
+| Peak GB at inference | 6.07 | 7.44 |
+
+- Paired, fused minus loaded: +0.020 [-0.020, +0.060]. No loss from fusing at 6 bits.
+- Speed 32.5 tok/s over 496 generations: the 30 tok/s gate passes, with a small margin.
+- **Recall probe on the fused copy fails H8 as written** (`eval_reports/recall-probe-qwen3-8b-sft-v1-s2m-fused-6bit-dev.md`, `quill recall --fused`):
+
+| Recall probe, dev, 186 prompts | Flagged (8+ words) | Max span | By prompt (summary / paraphrase / opening) | Rebuilt flagged |
+|---|---|---|---|---|
+| Untuned base | 4 | 9 | 1 / 0 / 3 | 2 |
+| s2m, adapter loaded | 3 | 9 | 0 / 2 / 1 | 49 |
+| s2m, fused 6-bit | 8 | 14 | 2 / 4 / 2 | 44 |
+
+- 7 of the fused copy's 8 flagged spans occur in a train chunk (5 in one post, 2 in two posts); 1 in another dev post. So this is recall of training text, not reconstruction.
+- The loaded adapter and the fused copy are the same weights up to quantization, so they sample differently from one seed. 8 against 4 of 186 is within what one sample per prompt can produce by chance; a 14-word span against 9 is not reassuring. One sample per prompt cannot settle whether fusing raised recall or the unfused 3 was a lucky draw.
+- In the eval itself the memorization gate still holds for the fused copy: 23 of 496 candidates carry a span and are dropped; 0 of 124 final outputs do.
+- **Open:** resample the probe (3 samples per prompt for base, loaded and fused) before calling H8 on this build either way.
+
+---
+
 ## 2026-11-12: The mixed adapter with the paraphrase tag passes the gates at N=4 and beats stage 1
 
 **Phase 5.** Report: `eval_reports/sft-v1-s2m-ptag-n4-dev.md`. `sft-v1-s2m` (from s1p, one pass over forms A and B joined), `paraphrase` tag, N=4, draft retry, gates as written (strict entity gate).
