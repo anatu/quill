@@ -18,7 +18,7 @@ Lay-reader preference is not a goal. The user ruled it out: it is too broad and 
 
 Quill is a small local model that turns notes into textbook-quality prose. Claude, in the session, works out the content: the points to teach and the details available. Quill writes the exposition. It is a QLoRA adapter on Qwen3-8B (4-bit, MLX) trained on an Apple Silicon Mac, to be served to Claude Code as an MCP tool. Prompt-only solutions are out of scope as the product; prompted Claude is the baseline to beat.
 
-Status: the pipeline, eval harness and two corpora are built. A restyling adapter exists for each corpus. The first explain adapter has been trained and compared: it does not beat Claude with exemplars (logbook 2026-11-15). Nothing is served yet.
+Status: the pipeline, eval harness and two corpora are built. A restyling adapter exists for each corpus. The first explain adapter has been trained and compared: it has the register and makes errors; Claude with exemplars is accurate and lacks the register (logbook 2026-11-15). Nothing is served yet.
 
 ## 2. Architecture
 
@@ -130,7 +130,7 @@ The authorship verifier (M1) and the classifier (M15) were built to tell one ess
 | 3 Restyle pairs | Done for both. Textbook: 379 paraphrase pairs, 460 draft pairs |
 | 4 Model bake-off | Done. Qwen3-8B |
 | 5 Restyle fine-tune | Done for both. Essayist: works. Textbook: does not beat prompted Claude (section 3) |
-| 5x Explain task | **First run done, negative.** `tb-x1` has the book's voice (M1 97.5% against 37.8% for Claude with exemplars) but writes less coherent, less correct exposition than `bt-ex`; on new topics its passages are short and contain errors. Direction under review (followup.md) |
+| 5x Explain task | **First run done.** `tb-x1` matches the book's register (voice check 100% of passages, the book 100%, Claude with exemplars 32%) and averages 2.1 major errors a passage (Claude with exemplars 0.06). Neither system has both. Next: realise a planned backbone of typed moves with bound details, checked per move; design and experiment arms in [harness_research.md](harness_research.md) |
 | 6 Inference pipeline | Not started. Drafter retry, gates and rerank exist as eval code |
 | 8 Ship gate | Blind picks by the user against `bt-ex`; then one run on test |
 | 9 MCP serving in Claude Code | Not started |

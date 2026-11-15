@@ -4,6 +4,86 @@ One entry per experiment or finding, newest first. Each entry says what was run,
 
 ---
 
+## 2026-11-15: Prior art on writing harnesses: they fix structure, not voice
+
+**Question (user).** Is the limit the harness and not the model, and how much literature studies writing harnesses? Report: [harness_research.md](harness_research.md); researchers' notes in `research_notes/writing-harness/`. Five parallel literature passes and a synthesis; no new experiments.
+
+- **Almost no work studies the writing harness by name.** No paper found uses "harness" or "scaffold" with prose quality as the outcome; none ablates a harness for writing with the model fixed and human raters; no peer-reviewed prompt-optimiser result on writing; no staged textbook writer graded on its prose. Relevant work is scattered: plan-then-write (several hundred papers), about 40 agentic expository systems, critique and verification loops (mostly short tasks), personalisation. These are absences in a targeted search.
+- **What harnesses have bought:** organisation and coherence, 10-28 points human-judged; fidelity to supplied facts, two-thirds or more of omitted, invented and contradicted facts removed when each plan unit names its facts (topic-level outlines give no such gain); verify-and-repair, 5-15 points of factual precision, partly by saying less. Logical errors: no measured gain anywhere. Prose quality: flat or slightly worse. Voice: fine-tuning only (expert preference odds 0.16 prompted, 8.16 fine-tuned, a preprint).
+- **LLM revision strips voice** even under a minimal-edit instruction (one 2026 study: up to three times as much wording replaced as in human revision). So the strong model should detect and localise, and the style model should regenerate.
+- **Selection is capped by the checker,** and LLM checkers are weak at finding errors (best rater 58 F1 on unfaithful claims). Errors correlate across samples.
+- **Plan-then-write failure modes:** output capped by plan quality; plan items silently dropped (58.5% followed in one system); coherence lost when units are expanded independently.
+- **Nearest precedent:** Balepur et al. (EMNLP 2023), small models writing from per-sentence content plans, on outputs of 73-90 words. No paper found pairs a strong planner with a small fine-tuned realiser for multi-paragraph expository prose, or conditions on explanation moves.
+- **Bearing on this project.** Our split result (adapter: register without correctness; Claude: correctness without register) is the split the literature shows between fine-tuning and harness. The proposed design, a backbone of typed moves with bound details, realised by the adapter and checked per move, is supported component by component and unmeasured as a whole. The report gives nine design recommendations and a seven-arm experiment; the decisive arm is a human-corrected plan, which shows whether the adapter can write correctly when told exactly what to say.
+- Evidence quality varies: many figures came through summaries or snippets and are labelled so in the report.
+
+---
+
+## 2026-11-15: Error count: the explain adapter averages two major errors a passage
+
+**Method** (`scripts/error_count.py`, `configs/prompts/error_check.txt`; report `eval_reports/tb/error-count-dev.md`; annotations with quotes stay in `~/.quill/tb/eval/errors/`). Claude Opus read each of the 34 dev passages per system, blind to the system, with the notes and the book's own passage as reference, and listed errors by type and severity. Cost $3.33.
+
+| | `tb-x1` | `bt-ex` (Claude + exemplars) | Human (control) |
+|---|---|---|---|
+| Errors per passage | 7.53 | 0.88 | 0 |
+| Major errors per passage | 2.12 | 0.06 | 0 |
+| Passages with no error | 0 of 34 | 14 of 34 | 34 of 34 |
+| Passages with no major error | 5 | 32 | 34 |
+| Passages with a major error of substance | 24 | 2 | 0 |
+
+| Type, all (major) | `tb-x1` | `bt-ex` |
+|---|---|---|
+| misstatement: contradicts the notes or the reference | 71 (33) | 5 (1) |
+| vague: a needed step blurred or missing | 44 (7) | 1 (0) |
+| unsupported: a specific claim in neither source | 43 (4) | 15 (0) |
+| logic: invalid step or self-contradiction | 37 (14) | 4 (1) |
+| structure: stray heading, dangling sentence, stops early | 33 (13) | 0 |
+| repetition | 23 (0) | 3 (0) |
+| entity: wrong name, number, unit | 5 (1) | 2 (0) |
+
+- **Misstatement is the largest class, and much of it is mis-binding:** a true detail attached to the wrong thing. From the annotations: a figure said to show something else; a property of the simple checksum attributed to CRC; a tool's output named as its input. The details are in the notes; the model connects them wrongly. MATERIAL is shuffled, which removes the cue for which detail belongs to which point.
+- **Structure errors are mostly passages that stop before covering a CORE point,** or a sentence that promises something that never comes.
+- **Longer passages are worse:** 3.18 major errors per passage for targets of 500 words or more (11 passages), 1.29 under 300 words (14).
+- **The gates barely help:** outputs that passed the gates average 1.75 major errors (16 passages), fallbacks 2.44 (18).
+- **Entities are nearly clean** (5 errors in 34 passages): names and numbers come from the notes.
+- `bt-ex`'s commonest error is an unsupported claim (15, none major): facts from Claude's own knowledge that are in neither the notes nor the reference.
+
+**Limits of the method.** The checker is Claude, and one of the systems is Claude; a shared blind spot would flatter `bt-ex`. The human control is weak: the passage is its own reference, so zero errors is close to guaranteed and does not measure false alarms. "Vague" is judged against the reference and is strict. I read the annotations for three `tb-x1` passages: every listed error was a real fault in the text, several of them subtle; none was a style complaint.
+
+**Reading.** Combined with the previous entry: the adapter has the register and averages two serious errors a passage; Claude with exemplars is nearly error-free and is not in the register. The error mix points at three testable causes before any retraining: shuffled material (mis-binding), no planning before writing, and length.
+
+---
+
+## 2026-11-15: Correction: Claude with exemplars does not reach the human register
+
+**Prompted by the user**, who did not accept my statement that Claude shown real passages "reaches the register". I had based it on reading four outputs. Measured against the human-written passages on the same 34 dev items, it is wrong.
+
+| Dev, 34 items, same content | Human (the book) | Claude + exemplars | Claude, instruction only | quill `tb-x1` |
+|---|---|---|---|---|
+| Verifier accepts the passage as the book | 100% | 32% | 3% | 100% |
+| Sentence length, mean / SD | 21.8 / 12.2 | 19.3 / 8.8 | 17.7 / 7.6 | 20.2 / 10.4 |
+| Sentences over 35 words | 11.8% | 3.8% | 1.8% | 8.0% |
+| "For example" per 1,000 words | 3.2 | 1.0 | 0.7 | 4.5 |
+| Sentences opening with a connective | 10.4% | 5.4% | 3.3% | 12.8% |
+| we / us / our per 1,000 words | 8.2 | 6.7 | 3.3 | 8.5 |
+| you / your per 1,000 words | 2.5 | 0.4 | 0.1 | 3.4 |
+| Questions, share of sentences | 1.7% | 0.3% | 0.3% | 1.3% |
+| Parentheses per 1,000 words | 14.6 | 8.5 | 6.6 | 10.3 |
+| Semicolons per 1,000 words | 2.9 | 1.2 | 0.5 | 1.6 |
+| Words per paragraph | 79 | 108 | 99 | 84 |
+| Trailing -ing clauses per 1,000 words | 3.7 | 3.9 | 4.4 | 4.2 |
+
+(Features by spaCy tags and regular expressions over whole passages; verifier applied per passage, so the figures differ slightly from the harness's segment-level M1.)
+
+- **Exemplars move Claude part of the way** (verifier 3% → 32%) and no further. It still writes a third as many worked examples, a third as many very long sentences, half as many connective openers, and almost never addresses the reader or asks a question.
+- **And that is with help from memory:** 26 of its 34 passages share a span of 12 or more words with the held-out section.
+- **The adapter is at or near the human rate on every one of these features.** Its failing is different: it loses the thread and makes errors (previous entry).
+- So neither system has both things. Claude has coherence and correctness without the register; the adapter has the register without reliable coherence. My earlier conclusion, that prompting is the best route to this register, does not follow from the evidence. What follows is that the two failures are complementary.
+
+A blind kit of the human passage against Claude with exemplars on the same notes is at `~/.quill/tb/examples/blind-human-vs-bt-ex.md` (local). It favours Claude, because of the recited spans.
+
+---
+
 ## 2026-11-15: The explain adapter learns the book's voice and loses to Claude with exemplars on coherence
 
 **Phase 5x.** Reports: `eval_reports/tb/{tb-x1,bt,bt-ex}-dev.md`. Blind kit (local, not published): `~/.quill/tb/examples/blind-tb-x1-vs-bt-ex.md`.

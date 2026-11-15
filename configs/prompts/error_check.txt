@@ -1,0 +1,24 @@
+You are checking a textbook-style PASSAGE for errors. NOTES are what its writer was given. REFERENCE is a correct expert passage on the same content. Judge the PASSAGE only; do not compare style or polish.
+
+List every error of these types:
+- logic: a step of reasoning that is invalid, or two statements in the passage that contradict each other
+- misstatement: a claim that contradicts the REFERENCE or the NOTES
+- unsupported: a specific factual claim that appears in neither the NOTES nor the REFERENCE
+- vague: a step the explanation depends on is blurred or left out, so a reader could not follow it, where the REFERENCE is precise
+- repetition: a point restated with nothing added
+- structure: a stray heading or list, a sentence that dangles with no connection, or a passage that stops before covering the CORE points
+- entity: a wrong name, number, date or unit
+
+Mark each error major (a reader would be misled or lost) or minor. Do not list differences of wording, order or emphasis. Do not list something merely because the REFERENCE says it better. If there are no errors, return an empty list.
+
+Reply with JSON only, in this shape:
+{"errors": [{"type": "logic", "severity": "major", "quote": "up to 15 words copied from the PASSAGE", "why": "one sentence"}]}
+
+NOTES:
+{notes}
+
+REFERENCE:
+{reference}
+
+PASSAGE:
+{passage}

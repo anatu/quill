@@ -44,7 +44,7 @@ The second is correct and orderly. It also reads like a checklist being obeyed. 
 
 The goal is to close that gap: exposition that an expert reader prefers to what Claude writes when told to write like a textbook. The judge is the person using the tool. General-audience appeal is not a goal.
 
-> **Where it stands.** The pipeline, the evaluation harness and two corpora are built. A first experiment (imitating an essayist's voice) worked and showed what fine-tuning can and cannot move. The experiment aimed at the target above has now run, and its first result is negative: the adapter learned the book's voice and wrote less coherent exposition than Claude given the same notes and three real passages. Nothing is served as a tool. Numbers come from [eval_reports/](eval_reports/); the day-by-day record is the [logbook](knowledge_base/logbook.md).
+> **Where it stands.** The pipeline, the evaluation harness and two corpora are built. A first experiment (imitating an essayist's voice) worked and showed what fine-tuning can and cannot move. The experiment aimed at the target above has now run, and its first result is split: the adapter matches the book's register and averages two major errors a passage; Claude given the same notes and three real passages is nearly error-free and does not match the register. Nothing is served as a tool. Numbers come from [eval_reports/](eval_reports/); the day-by-day record is the [logbook](knowledge_base/logbook.md).
 
 ## What quill does
 
@@ -156,23 +156,35 @@ Hence the notes-to-passage task above. The model is given less and has to decide
 
 One adapter, one book, 428 pairs, one pass. Three systems wrote from the same 34 held-out notes ([reports](eval_reports/tb/)).
 
-| | Quill | Claude, textbook instruction | Claude + 3 real passages |
-|---|---|---|---|
-| Voice check accepts as the book | 97.5% | 4.3% | 37.8% |
-| Sentence length, mean and spread (book: 22.6, 11.6) | 19.4, 10.0 | 17.8, 7.7 | 19.4, 8.6 |
+| Same content, 34 passages | The book (human) | Quill | Claude + 3 real passages | Claude, instruction only |
+|---|---|---|---|---|
+| Voice check accepts the passage as the book | 100% | 100% | 32% | 3% |
+| Sentence length, mean / spread | 21.8 / 12.2 | 20.2 / 10.4 | 19.3 / 8.8 | 17.7 / 7.6 |
+| Sentences over 35 words | 11.8% | 8.0% | 3.8% | 1.8% |
+| "For example" per 1,000 words | 3.2 | 4.5 | 1.0 | 0.7 |
+| Sentences opening with a connective | 10.4% | 12.8% | 5.4% | 3.3% |
+| "You" per 1,000 words | 2.5 | 3.4 | 0.4 | 0.1 |
+| Major errors per passage | 0 | 2.1 | 0.06 | not counted |
+| Passages with a major factual or logical error | 0 | 24 of 34 | 2 of 34 | not counted |
 
-- **The adapter has the voice.** By every style measure it sounds like the book, far more than Claude does.
-- **It loses on what matters here.** Read side by side, its passages lose the thread, repeat themselves and make errors. On topics outside the book they came out short and thin.
-- **Claude with exemplars reaches the register.** Shown three real passages, Claude motivates before defining, restates, says why a detail matters, and stays correct. The stiffness of the instruction-only version goes away.
-- **Claude also recites.** On the book's own held-out sections, its output with exemplars shares a median 24-word span with text it was never shown, and once 262 words. Comparisons on the book's own material favour it unfairly; new topics are the fair test.
-- **The entity gate does not work on notes input.** Half of Claude's own outputs fail it. It needs the form-tolerant check for this task.
+- **The adapter has the register.** It is at or near the book's rate on every style row. Claude with exemplars moves part of the way (3% to 32% on the voice check) and stops: a third as many worked examples, a third as many long sentences, almost no address to the reader.
+- **The adapter is not reliable.** Errors were counted by Claude Opus, blind to the system, against the notes and the book's passage ([report](eval_reports/tb/error-count-dev.md)). The largest class is a true detail attached to the wrong thing; then missing steps, and passages that stop before covering a point. Names and numbers are nearly always right.
+- **Claude also recites.** On the book's own held-out sections, 26 of its 34 passages share 12 or more words with text it was never shown. It still misses the register.
+- **The entity gate does not work on notes input.** Half of Claude's own outputs fail it.
 
-The plain reading: an 8B model can copy a voice; it does not match a frontier model's judgement about what to explain, and that judgement is what textbook quality is made of.
+So neither system has both halves. The failures are complementary: one has structure and correctness, the other has the register.
+
+### What the literature says about that split
+
+A survey of prior work ([knowledge_base/harness_research.md](knowledge_base/harness_research.md)) found the same division. Pipelines around a model (planning, staged drafting, checking) are credited with organisation, coverage and fidelity to supplied facts, with human-judged gains of 10 to 28 points on organisation and two-thirds fewer omitted or invented facts when each plan unit names its facts. They are credited with nothing on prose register, which is flat or slightly worse under a pipeline wherever it was measured. Voice comes from fine-tuning. No published study was found that combines the two for expository prose and measures both.
+
+That points at the next experiment: Claude plans a backbone of typed moves (motivate, define, restate, worked example, contrast), each bound to its details; quill writes the passage from the plan; Claude checks it move by move, and quill, not Claude, regenerates what fails.
 
 ### What is not established
 
-- **Whether fine-tuning can help at all here.** This was a small test. More pairs of the same kind would mostly add voice.
-- **A human pick.** The comparison above is the builder's reading plus style statistics. Blind pairs judged by the user are the real test; about 85 picks detect a 65% preference.
+- **Whether a plan fixes the errors.** Untested. If the adapter still errs when handed a correct plan, the limit is the small model and no harness will fix it.
+- **The error count's accuracy.** The checker is Claude and one of the systems is Claude. Three annotated passages were read in full and every listed error was real, but miss rates are unknown.
+- **A human pick.** Blind pairs judged by the user are the real test; about 85 picks detect a 65% preference.
 - **Whether one networking book teaches exposition or networking.** More books from other subjects are needed before saying anything about transfer.
 - **Dev sets are small and reused.** The test splits are untouched.
 
@@ -185,7 +197,7 @@ The plain reading: an 8B model can copy a voice; it does not match a frontier mo
 | ✓ | Splits, eval harness, baselines | Done for the essays; textbook baselines running |
 | ✓ | Base model | Qwen3-8B. Qwen3.5-9B could not be trained on this Mac with mlx-lm ([logbook](knowledge_base/logbook.md)) |
 | ✓ | Restyling adapters | Essays: works (0.76 dev composite against 0.26 untuned). Textbook: no gain over prompted Claude |
-| ● | Notes-to-passage adapter | First run done: has the book's voice, loses to Claude with exemplars on coherence. Direction under review |
+| ● | Notes-to-passage adapter | First run done: matches the book's register, averages 2.1 major errors a passage. Next: writing from a planned backbone, with a per-move check |
 | | Inference pipeline | Gates, rerank and the drafter retry exist as eval code |
 | | Ship gate | Blind picks against Claude with exemplars; then one run on the test split |
 | | MCP serving in Claude Code | |

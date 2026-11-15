@@ -1,0 +1,134 @@
+{
+ "generated": "2026-11-15T17:16:06",
+ "split": "dev",
+ "checker": "claude-opus-5-5",
+ "cost_usd": 3.33,
+ "systems": {
+  "tb-x1": {
+   "passages": 34,
+   "errors": 256,
+   "major": 72,
+   "errors_per_passage": 7.53,
+   "major_per_passage": 2.12,
+   "errors_per_1k_words": 22.87,
+   "passages_clean": 0,
+   "passages_no_major": 5,
+   "passages_with_major_substance": 24,
+   "by_type": {
+    "logic": {
+     "all": 37,
+     "major": 14
+    },
+    "misstatement": {
+     "all": 71,
+     "major": 33
+    },
+    "unsupported": {
+     "all": 43,
+     "major": 4
+    },
+    "vague": {
+     "all": 44,
+     "major": 7
+    },
+    "repetition": {
+     "all": 23,
+     "major": 0
+    },
+    "structure": {
+     "all": 33,
+     "major": 13
+    },
+    "entity": {
+     "all": 5,
+     "major": 1
+    }
+   },
+   "unparsed": 0
+  },
+  "bt-ex": {
+   "passages": 34,
+   "errors": 30,
+   "major": 2,
+   "errors_per_passage": 0.88,
+   "major_per_passage": 0.06,
+   "errors_per_1k_words": 2.19,
+   "passages_clean": 14,
+   "passages_no_major": 32,
+   "passages_with_major_substance": 2,
+   "by_type": {
+    "logic": {
+     "all": 4,
+     "major": 1
+    },
+    "misstatement": {
+     "all": 5,
+     "major": 1
+    },
+    "unsupported": {
+     "all": 15,
+     "major": 0
+    },
+    "vague": {
+     "all": 1,
+     "major": 0
+    },
+    "repetition": {
+     "all": 3,
+     "major": 0
+    },
+    "structure": {
+     "all": 0,
+     "major": 0
+    },
+    "entity": {
+     "all": 2,
+     "major": 0
+    }
+   },
+   "unparsed": 0
+  },
+  "human": {
+   "passages": 34,
+   "errors": 0,
+   "major": 0,
+   "errors_per_passage": 0.0,
+   "major_per_passage": 0.0,
+   "errors_per_1k_words": 0.0,
+   "passages_clean": 34,
+   "passages_no_major": 34,
+   "passages_with_major_substance": 0,
+   "by_type": {
+    "logic": {
+     "all": 0,
+     "major": 0
+    },
+    "misstatement": {
+     "all": 0,
+     "major": 0
+    },
+    "unsupported": {
+     "all": 0,
+     "major": 0
+    },
+    "vague": {
+     "all": 0,
+     "major": 0
+    },
+    "repetition": {
+     "all": 0,
+     "major": 0
+    },
+    "structure": {
+     "all": 0,
+     "major": 0
+    },
+    "entity": {
+     "all": 0,
+     "major": 0
+    }
+   },
+   "unparsed": 0
+  }
+ }
+}
