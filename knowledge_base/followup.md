@@ -46,6 +46,14 @@ The user set the yardstick after reading the corpus research ([corpus_research.m
 - **Consequences for evaluation:** blind pairs, the user picking, against two baselines: vanilla Claude and Claude told to write like a textbook. The second is the real bar. Criteria: structure (definitions before use, one idea per paragraph, explicit steps), coherence, precision; not liveliness.
 - **Open:** a focused licence check of open textbooks, book by book.
 
+## Result, 2026-11-15: the explain adapter does not beat Claude with exemplars
+
+Details in the logbook. In short: `tb-x1` has the book's voice (verifier accept 97.5% against 37.8% for Claude with exemplars) but loses the thread and makes errors; Claude with three real passages writes coherent, well-organised exposition on new topics and makes the textbook moves the adapter was meant to learn. On the book's own dev set Claude also recites the book (median 24-word span, one of 262 words), so that kit is contaminated; judge on new topics instead (`~/.quill/tb/examples/explain-new-topics.jsonl`).
+
+**Decision needed:** stop fine-tuning for this register and package the exemplar approach (a prompt-side answer, which the user ruled out at the start as the whole product); keep the adapter for voice only; or look at a larger base model, which this Mac cannot train.
+
+**Loose ends from this experiment:** the entity gate is not usable on notes input as written (half of Claude's own outputs fail it); the explain notes are thicker than intended for short chunks; nothing from 2026-11-15 after `9cd5458` is committed.
+
 ## Plan, 2026-11-15: the explain task (option 2, chosen by the user)
 
 **Why.** Restyling holds content fixed, so it cannot teach what makes textbook prose good: restating a definition, working an example, separating near-synonyms, choosing the order. The fact lists used so far run to 0.79 of the passage's length and keep its order, so "facts → passage" is restyling again.

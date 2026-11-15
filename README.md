@@ -44,7 +44,7 @@ The second is correct and orderly. It also reads like a checklist being obeyed. 
 
 The goal is to close that gap: exposition that an expert reader prefers to what Claude writes when told to write like a textbook. The judge is the person using the tool. General-audience appeal is not a goal.
 
-> **Where it stands.** The pipeline, the evaluation harness and two corpora are built. A first experiment (imitating an essayist's voice) worked and showed what fine-tuning can and cannot move. The experiment that matters for the target above is running now and has no result yet. Nothing is served as a tool. Numbers come from [eval_reports/](eval_reports/); the day-by-day record is the [logbook](knowledge_base/logbook.md).
+> **Where it stands.** The pipeline, the evaluation harness and two corpora are built. A first experiment (imitating an essayist's voice) worked and showed what fine-tuning can and cannot move. The experiment aimed at the target above has now run, and its first result is negative: the adapter learned the book's voice and wrote less coherent exposition than Claude given the same notes and three real passages. Nothing is served as a tool. Numbers come from [eval_reports/](eval_reports/); the day-by-day record is the [logbook](knowledge_base/logbook.md).
 
 ## What quill does
 
@@ -152,10 +152,27 @@ It did not beat prompted Claude. The reason is in how the method works:
 
 Hence the notes-to-passage task above. The model is given less and has to decide more.
 
+### First result on the new task
+
+One adapter, one book, 428 pairs, one pass. Three systems wrote from the same 34 held-out notes ([reports](eval_reports/tb/)).
+
+| | Quill | Claude, textbook instruction | Claude + 3 real passages |
+|---|---|---|---|
+| Voice check accepts as the book | 97.5% | 4.3% | 37.8% |
+| Sentence length, mean and spread (book: 22.6, 11.6) | 19.4, 10.0 | 17.8, 7.7 | 19.4, 8.6 |
+
+- **The adapter has the voice.** By every style measure it sounds like the book, far more than Claude does.
+- **It loses on what matters here.** Read side by side, its passages lose the thread, repeat themselves and make errors. On topics outside the book they came out short and thin.
+- **Claude with exemplars reaches the register.** Shown three real passages, Claude motivates before defining, restates, says why a detail matters, and stays correct. The stiffness of the instruction-only version goes away.
+- **Claude also recites.** On the book's own held-out sections, its output with exemplars shares a median 24-word span with text it was never shown, and once 262 words. Comparisons on the book's own material favour it unfairly; new topics are the fair test.
+- **The entity gate does not work on notes input.** Half of Claude's own outputs fail it. It needs the form-tolerant check for this task.
+
+The plain reading: an 8B model can copy a voice; it does not match a frontier model's judgement about what to explain, and that judgement is what textbook quality is made of.
+
 ### What is not established
 
-- **Whether the new task works.** The adapter is training. An 8B model writing 300 words from notes has more room to garble meaning than one restyling a draft, and the restyling adapter already made meaning errors on unfamiliar material.
-- **Whether it beats the right baseline.** The bar is Claude given the same notes, a textbook instruction and three real passages from the book. On a first look, Claude writes well from notes this complete. The comparison is blind pairs judged by the user; about 85 picks are needed to detect a 65% preference.
+- **Whether fine-tuning can help at all here.** This was a small test. More pairs of the same kind would mostly add voice.
+- **A human pick.** The comparison above is the builder's reading plus style statistics. Blind pairs judged by the user are the real test; about 85 picks detect a 65% preference.
 - **Whether one networking book teaches exposition or networking.** More books from other subjects are needed before saying anything about transfer.
 - **Dev sets are small and reused.** The test splits are untouched.
 
@@ -168,7 +185,7 @@ Hence the notes-to-passage task above. The model is given less and has to decide
 | ✓ | Splits, eval harness, baselines | Done for the essays; textbook baselines running |
 | ✓ | Base model | Qwen3-8B. Qwen3.5-9B could not be trained on this Mac with mlx-lm ([logbook](knowledge_base/logbook.md)) |
 | ✓ | Restyling adapters | Essays: works (0.76 dev composite against 0.26 untuned). Textbook: no gain over prompted Claude |
-| ● | Notes-to-passage adapter | In progress: pairs built, training, three-way comparison and blind kit queued |
+| ● | Notes-to-passage adapter | First run done: has the book's voice, loses to Claude with exemplars on coherence. Direction under review |
 | | Inference pipeline | Gates, rerank and the drafter retry exist as eval code |
 | | Ship gate | Blind picks against Claude with exemplars; then one run on the test split |
 | | MCP serving in Claude Code | |

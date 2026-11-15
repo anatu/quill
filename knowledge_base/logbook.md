@@ -4,6 +4,43 @@ One entry per experiment or finding, newest first. Each entry says what was run,
 
 ---
 
+## 2026-11-15: The explain adapter learns the book's voice and loses to Claude with exemplars on coherence
+
+**Phase 5x.** Reports: `eval_reports/tb/{tb-x1,bt,bt-ex}-dev.md`. Blind kit (local, not published): `~/.quill/tb/examples/blind-tb-x1-vs-bt-ex.md`.
+
+**Training.** `tb-x1` from `tb-s2m`, 428 explain pairs, one pass, LR 1e-4: val 1.271 → 1.267 (low 1.223 at step 160; flat), last train loss 1.164, 46 min, peak 11.16 GB.
+
+**Three systems, the same 34 held-out dev notes.**
+
+| | `tb-x1` (N=4, gates) | `bt` Claude, textbook instruction | `bt-ex` Claude + 3 real passages |
+|---|---|---|---|
+| M1 accept (voice verifier) | 97.5% | 4.3% | 37.8% |
+| M15 author / LLM | 97.5% / 2.5% | 0% / 100% | 17.8% / 82.2% |
+| Sentence length mean, SD (book 22.6, 11.6) | 19.4, 10.0 | 17.8, 7.7 | 19.4, 8.6 |
+| One-sentence paragraph share (book 22%) | 20% | 0% | 2% |
+| M5 entity pass | 55.9% | 52.9% | 52.9% |
+| Fallback | 52.9% | 52.9% | 50.0% |
+| Longest span shared with the item's own held-out section: median, max | 8, 16 | 10, 27 | 24, 262 |
+| Cost | local | $0.93 | $1.45 |
+
+- **The adapter has the book's voice** by every style measure, far more than Claude does, exemplars or not.
+- **The entity gate fails half of every system's outputs, Claude's included.** It is not discriminating on notes input (acronym expansions, figure references and re-formed figures trip it). The fallback figures here say nothing about quality; the gate needs the form-tolerant check for this task.
+- **Claude recites the book.** Given three passages from it, Claude's outputs share a median 24-word span with the held-out section they were never shown, and one reproduces 262 words. The book is in Claude's training data and the exemplars cue it. So `bt-ex` on this dev set is partly the book itself, and a blind comparison on these items is contaminated in Claude's favour.
+
+**Reading the outputs** (two dev items, then four topics outside the book: `~/.quill/tb/examples/explain-new-topics.jsonl`).
+
+- `tb-x1` on dev: recognisably the book's manner ("It turns out", "The problem with this approach is"), but it loses the thread. One passage contradicts itself about when translation is needed, ends on a stray figure sentence and repeats a point three times; another is sound but restates itself and breaks into a list.
+- `tb-x1` on new topics: short and thin (69 to 185 words against about 230 asked; all four fail the length gate on most candidates), with errors: a wrong sum in the odd-numbers argument, a nonsense aside about seeing by radio waves, a vague step in binary search.
+- `bt-ex` on new topics, where it cannot recite: coherent and well organised, and it makes the textbook moves the adapter was meant to learn. It motivates before defining, restates ("a prediction is not the same as an observation"), says why a detail matters ("Having two experiments matters"), and carries each paragraph into the next. No errors seen in the four.
+
+**Conclusion.** For this target the 8B adapter does not exceed Claude; it is clearly worse on coherence and correctness, and those are what the user is asking for. What it learns well is voice, which is not the bottleneck here. Claude with a few real passages as exemplars already writes in the target register on new material. This is the outcome the plan's risk table named ("Claude with exemplars already matches the book").
+
+**What I would not conclude:** that fine-tuning cannot help at all. One book, 428 pairs, one pass and an 8B model is a small test. But the gap in reasoning quality is large, and more data of the same kind would mostly add more voice.
+
+**Open (user):** whether to (1) stop the fine-tune for this register and package the exemplar approach, which is prompt-side; (2) use the adapter after Claude only where voice matters; (3) try a larger local base model, which this Mac cannot train at 24 GB.
+
+---
+
 ## 2026-11-15: The explain task: notes-to-passage pairs built; plan and README rewritten around it
 
 **Decision (user, 2026-11-14).** Try a different training task instead of restyling. Plan: [followup.md](followup.md) and [plan.md](plan.md) section 4.
