@@ -276,3 +276,24 @@ def test_strict_sets_drop_pairs_whose_target_loses_an_input_item(tmp_path):
     out = to_mlx.write(cfg, rows)
     assert out["s2s"]["rows"]["train"] == out["s2"]["rows"]["train"] - 1 and out["s2s"]["strict"] and not out["s2"]["strict"]
     assert out["s2m"]["rows"]["train"] == out["s1p"]["rows"]["train"] + out["s2"]["rows"]["train"]          # both forms
+
+
+# ---------------------------------------------------------------- explain task
+
+def test_explain_notes_parse_shuffle_and_checks():
+    from quill.pairs import explain
+
+    reply = "CORE:\n- Bandwidth is bits per second.\n- Throughput is what is measured.\nMATERIAL:\n- 10 Mbps link\n- 0.1 microsecond per bit\n- Ethernet\n"
+    core, material = explain.parse(reply)
+    assert len(core) == 2 and material == ["10 Mbps link", "0.1 microsecond per bit", "Ethernet"]
+    assert explain.parse("no such shape") == ([], [])
+    a, b = explain.notes_text(core, material, "k1"), explain.notes_text(core, material, "k1")
+    assert a == b and a.startswith("CORE:\n- Bandwidth") and sorted(a.split("MATERIAL:\n")[1].split("\n")) == sorted("- " + m for m in material)
+    assert any(explain.notes_text(core, material, f"k{i}") != a for i in range(8))                  # material order varies by key
+    target = "Bandwidth is the number of bits sent each second. " * 6 + "On a 10 Mbps Ethernet link each bit takes 0.1 microsecond."
+    row = dict(core=core, material=material, notes=a, target=target, words=len(target.split()))
+    assert explain.check(row, 500) == []
+    assert explain.check(dict(row, target=target + " Alan Turing measured 42 of them in 1936."), 500) == ["closure"]
+    assert explain.check(dict(row, core=[]), 500) == ["shape"] and "tokens" in explain.check(row, 5000)
+    m = explain.messages(row)
+    assert "op: explain" in m[0]["content"] and "input: notes" in m[0]["content"] and m[2]["content"] == target.strip()

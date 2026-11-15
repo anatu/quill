@@ -12,6 +12,8 @@ built, so meaning is not in the rank yet.
 """
 from __future__ import annotations
 
+from .. import config as _config
+
 import json
 import random
 import time
@@ -324,7 +326,7 @@ def recall_probe(cfg: dict, part: str = "dev", gen=None, ctx=None, limit: int | 
         d = Path(cfg["paths"]["eval"]) / "recall"
         d.mkdir(parents=True, exist_ok=True)
         (d / f"{name}-{part}.jsonl").write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in res))
-        rd = harness.REPO / "eval_reports"
+        rd = _config.reports_dir(harness.REPO, cfg)
         (rd / f"recall-probe-{name}-{part}.json").write_text(json.dumps(rep, indent=1))
         L = [f"# Recall probe: {name} ({gen.model}) on {part} ({rep['generated']})", "",
              f"Longest verbatim span, in words, that the prompt did not supply. The gate is {ctx.memo.n}. "

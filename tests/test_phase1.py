@@ -360,3 +360,39 @@ def test_aicheck_flags_review_and_gate(cfg):
     assert {f["decision"] for f in ai_check.list_flags(cfg)} <= {"keep", "drop"}
     build.build(cfg)                                     # a rebuild keeps the flags table
     assert ai_check.list_flags(cfg)
+
+
+def test_rst_reader_keeps_prose_and_marks_figures():
+    from quill.ingest import rst
+
+    src = """1.5 Performance
+===============
+
+Networks are expected to perform well, as :numref:`Figure %s <fig-a>` shows. A link
+- wrapped oddly - still belongs to this paragraph, with *emphasis* and ``code``.
+
+.. _fig-a:
+.. figure:: figures/a.png
+   :width: 300px
+
+   A caption that is not prose.
+
+.. sidebar:: An aside
+
+   Text in another voice.
+
+Consider the following::
+
+   int x = 1;
+
+- First point
+  continued here.
+1. Numbered point.
+"""
+    sec = rst.read_section(src)
+    kinds = [b["kind"] for b in sec["blocks"]]
+    text = " ".join(b["text"] for b in sec["blocks"])
+    assert sec["title"] == "Performance" and kinds == ["h", "p", "media", "p", "media", "li", "oli"]
+    assert "Figure 1 shows" in text and "- wrapped oddly - still belongs" in text and "emphasis and code" in text
+    assert "caption" not in text and "another voice" not in text and "int x" not in text
+    assert sec["blocks"][3]["text"] == "Consider the following:" and sec["blocks"][5]["text"] == "First point continued here."

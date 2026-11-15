@@ -1,8 +1,8 @@
 <h1 align="center">quill</h1>
 
 <p align="center">
-  A small model that runs on a Mac and rewrites your draft in one writer's voice.<br>
-  Claude works out what to say. Quill handles how it reads.
+  A small model that runs on a Mac and writes exposition the way a good textbook does.<br>
+  Claude works out the content. Quill writes the passage.
 </p>
 
 <p align="center">
@@ -10,168 +10,119 @@
   <img alt="MLX" src="https://img.shields.io/badge/runs%20on-MLX%20%2F%20Apple%20Silicon-black">
   <img alt="QLoRA" src="https://img.shields.io/badge/method-QLoRA%20on%20Qwen3--8B-8a2be2">
   <img alt="Local only" src="https://img.shields.io/badge/data-never%20leaves%20the%20machine-2e8b57">
-  <img alt="Status" src="https://img.shields.io/badge/status-phase%205%20of%2010-orange">
+  <img alt="Status" src="https://img.shields.io/badge/status-experiment%20in%20progress-orange">
 </p>
 
 ---
 
-## You can hear it
+## The target
 
-Here are the same facts written twice.
+This is the register quill is being trained to write. It is from *Computer Networks: A Systems Approach* by Larry Peterson and Bruce Davie.
 
-<table>
-<tr>
-<th width="50%">A</th>
-<th width="50%">B</th>
-</tr>
-<tr>
-<td valign="top">
+> Network performance is measured in two fundamental ways: *bandwidth* (also called *throughput*) and *latency* (also called *delay*). The bandwidth of a network is given by the number of bits that can be transmitted over the network in a certain period of time. For example, a network might have a bandwidth of 10 million bits/second (Mbps), meaning that it is able to deliver 10 million bits every second. It is sometimes useful to think of bandwidth in terms of how long it takes to transmit each bit of data. On a 10-Mbps network, for example, it takes 0.1 microsecond (μs) to transmit each bit.
+>
+> Bandwidth and throughput are subtly different terms. First of all, bandwidth is literally a measure of the width of a frequency band. For example, legacy voice-grade telephone lines supported a frequency band ranging from 300 to 3300 Hz; it was said to have a bandwidth of 3300 Hz - 300 Hz = 3000 Hz. If you see the word *bandwidth* used in a situation in which it is being measured in hertz, then it probably refers to the range of signals that can be accommodated.
 
-In today's fast-paced world, it's easy to overlook the quiet power of patience. Ed Marsh's story serves as a powerful testament to this timeless truth. In 1961, he planted 40 oak seedlings — a small act that would ultimately transform the landscape. It wasn't just about trees; it was about vision, commitment, and legacy. For two decades, progress was barely visible, and neighbors questioned his efforts. Although he passed away in 1999, the grove shaded two full acres by 2001. Ultimately, his journey reminds us that the most meaningful growth often happens beneath the surface.
+<sub>Section 1.5.1. Copyright Elsevier, 2012. Source: <a href="https://github.com/SystemsApproach/book">github.com/SystemsApproach/book</a>, CC BY 4.0.</sub>
 
-</td>
-<td valign="top">
+And this is Claude Opus, asked to explain binary search "in the manner of a high-quality textbook":
 
-Ed Marsh planted 40 oak seedlings in 1961.
+> Binary search is a method for finding a target value in a list. A target is the item being sought. Binary search requires that the list be sorted, meaning its items are arranged in order from smallest to largest. Without this ordering, the method cannot work.
+>
+> The search proceeds in steps. At each step, the method examines the middle item of the portion of the list that remains under consideration. It compares the target with this middle item. If the two are equal, the search ends. If the target is smaller, every item after the middle can be discarded.
 
-For twenty years they looked like sticks. Neighbors asked when he planned to pull them out.
+The second is correct and orderly. It also reads like a checklist being obeyed. The differences are specific:
 
-By 2001 the grove shaded two acres. Ed never saw it. He died in 1999.
-
-Most slow things work this way. Nothing seems to happen for a very long time, and then one day it has already happened.
-
-</td>
-</tr>
-</table>
-
-You knew which one a chatbot wrote before you finished its first sentence. The tells in A are easy to list:
-
-| Tell in A | Where |
-|---|---|
-| A stock opener that could start any essay | "In today's fast-paced world" |
-| Praise standing in for a point | "a powerful testament to this timeless truth" |
-| The "not just X, it was Y" frame | "It wasn't just about trees; it was about..." |
-| A list of three abstractions | "vision, commitment, and legacy" |
-| A moral tied on at the end | "his journey reminds us that..." |
-| Softened facts | "passed away", "questioned his efforts" |
-
-The tells you cannot list matter more. They show up when you count:
-
-| | A | B |
+| | Prompted Claude | The textbook |
 |---|---|---|
-| Words | 95 | 62 |
-| Paragraphs | 1 | 4 |
-| Average sentence | 13.6 words | 7.8 words |
-| Shortest and longest sentence | 12 and 17 | 4 and 17 |
-| Spread of sentence length (SD) | 1.8 | 3.9 |
+| Definitions | States each one and moves on | Gives it, then gives it again another way ("how long it takes to transmit each bit") |
+| Examples | Generic, one per point | Numeric and worked through (3300 Hz − 300 Hz = 3000 Hz) |
+| Near-synonyms | Left alone | Separated, with a rule for telling them apart |
+| Flow | Each sentence stands alone | Each sentence leans on the one before |
+| Sentence length | 12 words on average, little variation | 23 words on average, wide variation |
+| Stance | Instructions being followed | An author deciding what the reader needs next |
 
-Every sentence in A is about the same length. B has a four-word sentence next to a seventeen-word one. A person's rhythm is uneven in a way that is specific to them, and a language model's default rhythm is smooth.
+The goal is to close that gap: exposition that an expert reader prefers to what Claude writes when told to write like a textbook. The judge is the person using the tool. General-audience appeal is not a goal.
 
-<sub>Both passages were written for this README about an invented man. Neither is the author's text and neither is model output. Real samples are not shown here: the corpus stays off GitHub, and publishing the model's outputs is a consent question that is still open.</sub>
+> **Where it stands.** The pipeline, the evaluation harness and two corpora are built. A first experiment (imitating an essayist's voice) worked and showed what fine-tuning can and cannot move. The experiment that matters for the target above is running now and has no result yet. Nothing is served as a tool. Numbers come from [eval_reports/](eval_reports/); the day-by-day record is the [logbook](knowledge_base/logbook.md).
 
-## Prompting does not fix it
+## What quill does
 
-The obvious move is to ask a frontier model to write like a named author, and to hand it a style guide and real examples. We did that with Claude Opus and scored the result with an authorship check trained to tell this author from other essayists and from AI drafts of his own material.
+```mermaid
+flowchart LR
+    U([You, in Claude Code]) --> C[Claude<br/>works out the points to teach<br/>and the details available]
+    C -->|notes, via MCP tool call| Q[quill]
+    subgraph Mac [Your Mac, nothing leaves]
+        Q --> S[Write 4 candidates<br/>Qwen3-8B + adapter]
+        S --> G{Hard gates}
+        G -->|pass| R[Rank]
+        G -->|none pass| F[Return the notes,<br/>say which check failed]
+    end
+    R --> O([Best passage])
+```
+
+The input is notes in two parts. **CORE** holds the few points the passage should teach. **MATERIAL** holds the details it may draw on, as bare data in no particular order.
+
+```
+CORE:
+- Web caching can be done at several locations: the user's browser, a site-wide
+  shared cache, or inside an ISP.
+- A site-wide cache is known to its users, who configure browsers to connect to
+  it directly; this node is called a proxy.
+- An ISP cache is transparent: sites don't know of it, and a router on the path
+  caches pages by inspecting requests.
+MATERIAL:
+- Router reads the URL in the request message.
+- Browser cache: recently accessed pages, shown again on revisit.
+- ISP = Internet Service Provider; sits nearer the middle of the Internet.
+- Router watches for the server's response passing in the opposite direction.
+```
+
+Quill decides the order, which point to restate, where a detail becomes an example, and how one sentence leads to the next. It may not add a name, number, date or link that the notes lack. Four candidates are written, and a candidate is dropped if it:
+
+- adds or loses a name, number, date or link
+- runs 30% over or under the requested length
+- copies eight or more words in a row from the training corpus
+- contains chatbot residue ("Certainly! Here's...")
+
+If no candidate survives, quill returns the notes and names the check that failed.
+
+## Training
+
+Each training example pairs a real textbook passage with notes cut down from it.
+
+```mermaid
+flowchart LR
+    A[Textbook passage] -->|Claude reduces it| N[CORE points<br/>+ MATERIAL details, shuffled]
+    N -->|model learns to write| T[The passage]
+```
+
+- Claude reads the passage and writes the notes: three to six core points with no examples or restatements, and the specific details as data.
+- The details are shuffled, so the passage's order is not handed to the model.
+- A name or number the notes missed is added back, so everything factual in the target is in the input. The model learns to explain and arrange. It does not learn to supply facts.
+- First build: 428 training pairs from 475 passages ([report](eval_reports/tb/explain-v1.md)).
+
+The corpus is one book so far: 61 sections, 213,738 words, taken from the book's source repository under CC BY 4.0. [knowledge_base/corpus_research.md](knowledge_base/corpus_research.md) lists which other open textbooks can be added and which cannot (OpenStax, for one, now forbids use in LLM training).
+
+## How it got here
+
+### Experiment 1: an essayist's voice
+
+The project began as style imitation: make a draft sound like one writer, Morgan Housel, using his essays for Collaborative Fund (with Collaborative Fund's consent). The method was *style inversion*. Each passage is flattened into a plain paraphrase and a generic draft, and the model learns the trip back. Every fact in a target is already in its input.
+
+It worked. The chart shows how often an authorship check, trained to tell this author from other essayists and from AI drafts of his own material, accepts a passage as his.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/ladder-dark.svg">
   <img alt="Share of passages an authorship check accepts as the author's: the author's own held-out essays 94.8%, quill 85.1%, Claude Opus with a style guide 23.7%, the untuned 8B model 21.4%, other human essayists 5.0%, a plain assistant draft 0.0%" src="assets/ladder-light.svg">
 </picture>
 
-Prompted Opus gets the topics and the vocabulary and misses the sentences. A second Claude, shown a real passage beside Opus's best imitation of the same content, picked the real one 32 times out of 40 and the imitation once.
-
-Quill takes the other route. It fine-tunes a small open model (Qwen3-8B, 4-bit, QLoRA) on one writer's essays, on a laptop. The first voice is Morgan Housel's writing for the Collaborative Fund blog, used with Collaborative Fund's consent.
-
-> **Where it stands.** An adapter is trained and scored on the dev split. It has not been read blind by a person, has not touched the test split, and is not yet served as a tool. Every number here comes from [eval_reports/](eval_reports/) and the day-by-day record is in the [logbook](knowledge_base/logbook.md).
-
-## The shape of a voice
-
-Style is partly countable. The chart puts six habits on one scale: each system's rate as a multiple of the author's own.
+Countable habits moved too. Each system's rate is shown as a multiple of the author's own.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/fingerprint-dark.svg">
   <img alt="Six style habits as a multiple of the author's own rate, for a plain assistant draft, Claude Opus with a style guide, and quill. Quill sits closest to the author on paragraph length, em dashes, sentence length and its spread; Opus is closer on questions." src="assets/fingerprint-light.svg">
 </picture>
-
-A plain assistant draft writes paragraphs twice as long as his and almost never lets a sentence stand alone. Opus with a style guide overcorrects into short, clipped sentences. Quill lands nearest on four of the six. It still asks too few questions and its sentences are still too even, and both are on the list to fix.
-
-## How it works
-
-```mermaid
-flowchart LR
-    U([You, in Claude Code]) --> C[Claude<br/>works out the brief,<br/>facts and length]
-    C -->|MCP tool call| Q[quill]
-    subgraph Mac [Your Mac, nothing leaves]
-        Q --> S[Sample 4 candidates<br/>8B base + style adapter]
-        S --> G{Hard gates}
-        G -->|pass| R[Rank by style]
-        G -->|none pass| F[Return the input,<br/>say so]
-    end
-    R --> O([Best candidate])
-```
-
-Four candidates are sampled. A candidate is dropped if it:
-
-- loses or adds a name, number, date or link
-- runs 30% over or under the requested length
-- copies eight or more words in a row from the corpus
-- contains chatbot residue ("Certainly! Here's...")
-
-The survivors are ranked on style. If none survive, Quill returns your input unchanged and reports which check failed.
-
-### The tool, as Claude will call it
-
-```jsonc
-// restyle: you have a draft
-{ "tool": "restyle",
-  "draft": "Compounding works slowly at first and then quickly. Most of the gains arrive late.",
-  "length_words": 300 }
-
-// write: you have a brief and facts
-{ "tool": "write",
-  "brief": "A short essay on why slow projects look like failures for most of their life.",
-  "facts": ["Ed Marsh planted 40 oak seedlings in 1961", "the grove shaded two acres by 2001"] }
-```
-
-```jsonc
-// both return
-{ "text": "...",
-  "status": "ok",              // or "fallback", with reasons
-  "checks": { "entities": "kept", "meaning": 0.91, "longest_copied_span": 3 },
-  "output_id": "..." }
-```
-
-This is the planned contract. The serving layer is Phase 9 and nothing above is captured output.
-
-## Training runs backwards
-
-Teaching a model to "write like this author" from a topic alone also teaches it to make things up. So each training example starts from the author's passage and works backwards to a plain input.
-
-```mermaid
-flowchart LR
-    A[Author's passage] -->|Claude flattens it| P[Neutral paraphrase]
-    A -->|facts listed,<br/>then drafted plainly| D[Generic assistant draft]
-    P -->|model learns| T[Author's passage,<br/>verbatim]
-    D -->|model learns| T
-```
-
-The model learns the trip from plain to voiced. Every fact in a target is already in its input, so there is nothing to invent.
-
-One training example (synthetic text; the corpus is not in this repo):
-
-```json
-{"messages": [
-  {"role": "system",    "content": "quill v2\nop: restyle\ninput: draft\nlength: 150-300\nvoice: v0"},
-  {"role": "user",      "content": "Ed Marsh planted 40 oak seedlings in 1961. For two decades, progress was barely visible."},
-  {"role": "assistant", "content": "Ed Marsh planted 40 oak seedlings in 1961. For twenty years they looked like sticks."}
-]}
-```
-
-About half of the drafts come from Claude and half from the untuned local model, since that model writes the drafts at run time.
-
-## What the experiments showed
-
-The scoring harness was built before any model was trained, and each metric had to pass a sanity check on held-out text first. Splits are by topic, so the model is tested on subjects it never trained on.
 
 | System, dev split, 4 candidates | Accepted as the author | Read as an LLM | Meaning kept | Falls back to the input |
 |---|---|---|---|---|
@@ -181,36 +132,48 @@ The scoring harness was built before any model was trained, and each metric had 
 | Quill, trained on paraphrases | 72.4% | 23.7% | 0.89 | 10.5% |
 | **Quill, trained on paraphrases and drafts** | **85.1%** | **9.1%** | **0.90** | **12.9%** |
 
-Things that turned out to be true:
+Findings from that work that still hold:
 
-- **Training on drafts alone reaches the author's ceiling and breaks the facts.** That adapter was accepted 98% of the time, and four in ten of its candidates lost or added a name or number. Training on paraphrases and drafts together kept most of the style and held the facts. Ten optimizer steps were enough to see the trade.
-- **Most dropped facts came from the drafter.** When the untuned model wrote a draft from notes, two thirds of its drafts already lost or added an item. Having it redraft with the missing items named cut the fallback rate from 30% to 10%.
-- **Merging the adapter into 4-bit weights erases it.** The merged model scored like the untuned one. Merging at full precision and re-quantizing to 6 bits keeps the voice and runs at about 30 tokens a second.
-- **A zero-shot AI detector could not tell Opus's imitation from the author** (AUC 0.50). It was dropped from the harness.
-- **The first authorship check was fooled by fluency.** It accepted half of plain Claude drafts of the author's content until such drafts were added to its negatives.
+- **Training on drafts alone reaches the author's ceiling and breaks the facts.** That adapter was accepted 98% of the time, and four in ten of its candidates lost or added a name or number. Training on paraphrases and drafts together kept most of the style and held the facts.
+- **Most dropped facts came from the drafter.** When the untuned model wrote a draft from notes, two thirds of its drafts already lost or added an item. Redrafting with the missing items named cut the fallback rate from 30% to 10%.
+- **Merging the adapter into 4-bit weights erases it.** The merged model scored like the untuned one. Merging at full precision and re-quantizing to 6 bits keeps the voice and runs at 32 tokens a second.
+- **A zero-shot AI detector could not tell Opus's imitation from the author** (AUC 0.50). It was dropped.
 
-What is not established yet:
+### Why that was not enough
 
-- **No person has judged an output.** The checks above were built in this project, and a model can satisfy them without convincing a reader. A blind reading kit exists (40 pairs, pick the real one) and has not been run.
-- **Dev has been reused.** About eight adapter variants were compared on the same 62 passages. The test split is untouched and gets one run, with the final system.
-- **The baselines are slightly handicapped.** They ran without the redraft step. Like for like, the first adapter's lead over the untuned model on the combined score is 0.25, with a 95% interval of 0.16 to 0.35.
-- **The inputs so far are the author's own material.** How it does on a stranger's draft about something else is not measured.
+Tried on ordinary informational writing, the essayist's voice came out as short stories and proverbs. An essayist's moves, an anecdote and then a moral, have nowhere to go in a walkthrough. So the corpus changed to a textbook, and the same method was run again.
+
+It did not beat prompted Claude. The reason is in how the method works:
+
+- **Style inversion holds content fixed.** Every example and every ordering decision in a target is already in its input. The model learns the surface: rhythm, paragraphing, word choice.
+- **An essayist's voice is on the surface.** That is why experiment 1 worked.
+- **A textbook's surface is plain.** A neutral paraphrase of textbook prose is nearly a copy of it (81% word overlap, against 72% for the essayist). Given Claude's own textbook-style prose, the restyling adapter returned it almost unchanged.
+- **A textbook's quality is in content decisions:** which example to work, which confusion to head off, what to say next. A restyler is forbidden from making those and never sees one made.
+
+Hence the notes-to-passage task above. The model is given less and has to decide more.
+
+### What is not established
+
+- **Whether the new task works.** The adapter is training. An 8B model writing 300 words from notes has more room to garble meaning than one restyling a draft, and the restyling adapter already made meaning errors on unfamiliar material.
+- **Whether it beats the right baseline.** The bar is Claude given the same notes, a textbook instruction and three real passages from the book. On a first look, Claude writes well from notes this complete. The comparison is blind pairs judged by the user; about 85 picks are needed to detect a 65% preference.
+- **Whether one networking book teaches exposition or networking.** More books from other subjects are needed before saying anything about transfer.
+- **Dev sets are small and reused.** The test splits are untouched.
 
 ## Roadmap
 
-| | Phase | State |
+| | Step | State |
 |---|---|---|
-| ✓ | 0 Source and consent audit | Done, except the stored consent copy |
-| ✓ | 1 Extraction and cleaning | Done. 330 posts, 318,971 words, 835 chunks |
-| ✓ | 2 Splits, eval harness, baselines | Done on dev |
-| ✓ | 3 Training pairs | Done. 675 paraphrase pairs and 641 draft pairs ([report](eval_reports/pairs-v1.md)). A human read of 50 pairs is still open |
-| ✓ | 4 Model bake-off | Done. Qwen3.5-9B could not be trained on this Mac with mlx-lm; Qwen3-8B can ([logbook](knowledge_base/logbook.md)) |
-| ● | 5 Style fine-tune and ablations | In progress. Best adapter: dev composite 0.76 against 0.26 untuned and 0.25 for prompted Opus ([open questions](knowledge_base/followup.md)) |
-| | 6 Inference pipeline | |
-| | 8 Ship gate | Blind reads on the untouched test split |
-| | 9 MCP serving in Claude Code | |
+| ✓ | Sources, consent and licence records | Done for both corpora; stored consent copies pending |
+| ✓ | Extraction and cleaning | Done. Essays: 330 posts, 318,971 words. Textbook: 61 sections, 213,738 words |
+| ✓ | Splits, eval harness, baselines | Done for the essays; textbook baselines running |
+| ✓ | Base model | Qwen3-8B. Qwen3.5-9B could not be trained on this Mac with mlx-lm ([logbook](knowledge_base/logbook.md)) |
+| ✓ | Restyling adapters | Essays: works (0.76 dev composite against 0.26 untuned). Textbook: no gain over prompted Claude |
+| ● | Notes-to-passage adapter | In progress: pairs built, training, three-way comparison and blind kit queued |
+| | Inference pipeline | Gates, rerank and the drafter retry exist as eval code |
+| | Ship gate | Blind picks against Claude with exemplars; then one run on the test split |
+| | MCP serving in Claude Code | |
 
-The ship gate: a reader who knows the author must be unable to reliably pick the real passage (at most 25 of 40 correct), and the adapter must beat Opus's imitation head to head (at least 26 of 40). The full plan, with every threshold and its source, is in [knowledge_base/plan.md](knowledge_base/plan.md).
+The full plan is [knowledge_base/plan.md](knowledge_base/plan.md). The plan for the essayist experiment, with every threshold and its source, is [archived](knowledge_base/archive/plan-v2-essayist.md).
 
 ## Run it
 
@@ -228,9 +191,22 @@ uv run quill ingest                  # pages -> clean, deduped chunks
 uv run quill split                   # freeze topic-disjoint train/dev/test
 uv run quill eval --sanity           # prove each metric works before trusting it
 uv run quill baseline b0             # the bar: Claude + style guide + exemplars
-uv run quill pairs                   # build and curate the training pairs
+uv run quill pairs                   # build and curate the restyle pairs
 uv run quill train NAME --stage s1p  # fine-tune an adapter with mlx-lm
 uv run quill run NAME --adapter NAME --tag paraphrase --n 4   # generate on dev and score
+```
+
+A second corpus gets its own config, data folder and reports folder. The textbook voice:
+
+```
+C="--config configs/textbook.yaml"
+uv run quill $C ingest               # Sphinx source -> chunks, under ~/.quill/tb/
+uv run quill $C split
+uv run quill $C pairs --explain      # notes (CORE + MATERIAL) -> passage pairs
+uv run quill $C train tb-x1 --stage x1
+uv run quill $C explain tb-x1 --adapter tb-x1 --n 4      # write from held-out notes, score
+uv run quill $C explain bt-ex --claude exemplars         # the baseline to beat
+uv run quill $C explain --kit tb-x1 bt-ex                # blind reading kit
 ```
 
 <details>
@@ -261,6 +237,10 @@ uv run quill run NAME --adapter NAME --tag paraphrase --n 4   # generate on dev 
 | `uv run quill pairs --local` | Adds the local half of the draft pairs: the untuned base drafts from each fact list. No Claude calls |
 | `uv run quill train NAME [--stage s1\|s1p\|s2\|s2m] [--resume ADAPTER] [--lr LR] [--passes N]` | Trains an adapter with mlx-lm on one pair set; logs loss, speed and peak memory |
 | `uv run quill run NAME --adapter ADAPTER [--tag paraphrase\|draft] [--n 4] [--fused PATH]` | Generates with an adapter (or a merged copy) on the eval inputs and scores it |
+| `uv run quill pairs --explain` | Builds the notes-to-passage pairs: Claude reduces each chunk to CORE points and MATERIAL details; curates; writes the MLX data and a report |
+| `uv run quill explain NAME --adapter A \| --claude plain\|exemplars [--n 4]` | Writes passages from held-out notes with an adapter or with Claude, and scores them |
+| `uv run quill explain --kit A B` | Writes a blind reading kit pairing two systems' passages on the same notes; the key goes in a separate file |
+| `uv run python scripts/compare_examples.py` | Claude writes a brief; quill restyles it. Pairs stay under `~/.quill/` |
 | `uv run python scripts/readme_charts.py` | Redraws the README charts from the reports in `eval_reports/` |
 
 Run them in that order. `inputs`, `baseline b0`, `judge` and `pairs` send corpus text to Claude; they stop unless `scope.yaml` says `claude_api: yes`. `baseline b1` and `recall` need the base model at the `gen.base_model` path. The meaning, LUAR and detector scorers need local model copies under `~/.quill/models/` (`mis`, `luar-mud`, `gpt-neo-2.7b`). A rebuild with `ingest` keeps flag decisions and clears the spot-check result.
@@ -287,6 +267,7 @@ Run them in that order. `inputs`, `baseline b0`, `judge` and `pairs` send corpus
 ```
 configs/
   quill.yaml            paths, thresholds, dropped posts, decisions
+  textbook.yaml         the same for the textbook voice (own data and reports folders)
   lexicon/              seed lexicon v0 and the Kobak excess-word list
   prompts/              prompts for eval inputs, pairs, B0/B1, the judge and the recall probe
   train/                mlx-lm training configs
@@ -294,19 +275,19 @@ src/quill/
   cli.py                the commands above
   template.py           the one prompt template, shared by training and serving
   audit.py              Phase 0 inventory
-  ingest/               page parser; textlib (the Phase 0 reader and stylometrics)
+  ingest/               collabfund (HTML page parser), rst (Sphinx textbook source), textlib (the Phase 0 reader and stylometrics)
   clean/                boilerplate, twins, dedupe, chunk, pii_regex, ai_check
   corpus/               build (the pipeline), store (SQLite), gate, split
   scorers/              lexicon, contrast, av (verifier, attribution), stylometry, memo, entities, embed, meaning (MIS, fact entailment), detect
   gen/                  claude_cli (`claude -p` with a cache), local (mlx-lm with a cache)
   eval/                 pool, harness (metrics, composite), inputs, baselines (B0-B2, recall probe), vcheck, judge, blind, coverage
   train.py              one mlx-lm training stage: config, schedule, log parsing
-  pairs/                generate (paraphrases, marker placement), curate, local (base-model drafts), to_mlx, build
-eval_reports/           aggregate metrics only
+  pairs/                generate (paraphrases, marker placement), curate, local (base-model drafts), explain (notes -> passage), to_mlx, build
+eval_reports/           aggregate metrics only; tb/ holds the textbook voice's reports
 assets/                 README charts (SVG), drawn by scripts/readme_charts.py
-scripts/                readme_charts.py
+scripts/                readme_charts.py, compare_examples.py
 tests/                  synthetic text only; no corpus text
-knowledge_base/         plan, experiment logbook, literature review, research notes, decision docs
+knowledge_base/         plan, experiment logbook, follow-up queue, corpus research, literature review, archive of earlier plans
 ```
 
 </details>
@@ -315,16 +296,18 @@ knowledge_base/         plan, experiment logbook, literature review, research no
 
 The model imitates a living writer. These rules apply, and the ones that can be enforced in code are.
 
-- **Consent first.** The corpus is used under the rights holder's consent, recorded in `~/.quill/legal/scope.yaml`. Any use marked unknown there is blocked in code.
+- **Consent and licence first.** Each corpus has a record under `~/.quill/legal/`: the rights holder's consent for the essays, the CC BY 4.0 licence and consent for the textbook. A use marked unknown there is blocked. Publishing model outputs is marked unknown for both, which is why this README shows none.
+- **Honour opt-outs.** A source whose robots.txt, terms or author says no to AI use is not used without the rights holder's agreement. Several strong candidates were excluded on that ground ([corpus_research.md](knowledge_base/corpus_research.md)).
 - **Local only.** The corpus, adapters and weights never leave the machine and are not in this repo. `.gitignore` blocks weights, databases, JSONL and HTML.
-- **No passing off.** Outputs are never presented as the author's own writing. Tool, file and adapter names never carry the author's name.
-- **No copying.** A hard gate rejects any output that shares a long verbatim span with the corpus. One known limit: given a close paraphrase of one of the author's own passages, the adapter rebuilds some of the original wording. That is measured and reported, not gated; the tool is for restyling your own drafts.
+- **No passing off.** Outputs are never presented as an author's own writing. Tool, file and adapter names never carry an author's name.
+- **No copying.** A hard gate rejects any output that shares a long verbatim span with the corpus. One known limit: given a close paraphrase of one of the author's own passages, a restyling adapter rebuilds some of the original wording. That is measured and reported, not gated.
 - **Polite crawling.** Raw pages are cached once and never re-fetched. Crawls honour robots.txt, AI opt-outs and crawl delays.
 
 Details are in [knowledge_base/plan.md](knowledge_base/plan.md), section 2.4. Nothing here is legal advice.
 
 ## Credits
 
+- Textbook corpus and the passage quoted above: *Computer Networks: A Systems Approach*, Larry Peterson and Bruce Davie. Copyright Elsevier, 2012. Source: [github.com/SystemsApproach/book](https://github.com/SystemsApproach/book). Licence: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0). The text is not redistributed in this repository.
 - `configs/lexicon/kobak_excess_words.csv`: Kobak et al., [llm-excess-vocab](https://github.com/berenslab/llm-excess-vocab), MIT. Licence in `configs/lexicon/kobak_LICENSE`.
 - `src/quill/scorers/contrast.py`: a port of the stage-1 regexes from [slop-score](https://github.com/sam-paech/slop-score), Copyright (c) 2025 Sam Paech, MIT.
 - Models used locally, not redistributed: [Mutual Implication Score](https://huggingface.co/s-nlp/Mutual_Implication_Score) (CC BY-NC-SA 4.0), [LUAR-MUD](https://huggingface.co/rrivera1849/LUAR-MUD), [StyleDistance](https://huggingface.co/StyleDistance/styledistance), [gpt-neo-2.7B](https://huggingface.co/EleutherAI/gpt-neo-2.7B), [DeBERTa-v3 MNLI](https://huggingface.co/MoritzLaurer/DeBERTa-v3-base-mnli-fever-anli), spaCy `en_core_web_sm`.

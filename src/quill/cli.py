@@ -34,8 +34,8 @@ def _ingest(args) -> int:
     from .corpus import build
 
     r = build.build(config.load(args.config), raw=args.raw)
-    print(f"pages {r['pages']}  kept {r['kept_posts']}  words {r['words']:,}  tier {r['tier']}  "
-          f"(Phase 0: {r['phase0_words']:,}, {r['word_delta']:+,})")
+    print(f"pages {r['pages']}  kept {r['kept_posts']}  words {r['words']:,}  tier {r['tier']}"
+          + (f"  (Phase 0: {r['phase0_words']:,}, {r['word_delta']:+,})" if r["phase0_words"] else ""))
     print(f"quote words stripped {r['quote_words']:,}  duplicate paragraphs {r['duplicate_paragraphs']}  "
           f"twin groups {len(r['twins']['groups'])}")
     c = r["chunks"]
@@ -166,6 +166,12 @@ def _eval(args) -> int:
 def _pairs(args) -> int:
     from .pairs import build
 
+    if args.explain:
+        from .pairs import explain
+
+        r = explain.make(config.load(args.config))
+        print({k: v for k, v in r.items() if k != "generated"})
+        return 0
     if args.local:
         from .pairs import local
 
@@ -233,6 +239,26 @@ def _run(args) -> int:
     rep = harness.run(cfg, args.name, args.split)
     s = rep["scores"]
     print(f"{args.name} on {args.split}: composite {s.get('composite')}  M1 accept {s['M1_av']['accept_rate']:.1%}  "
+          f"fallback {s.get('fallback_rate')}")
+    print(f"wrote {rep['_out']}")
+    return 0
+
+
+def _explain(args) -> int:
+    from .eval import explain, harness
+
+    cfg = config.load(args.config)
+    if args.kit:
+        print(explain.kit(cfg, args.kit[0], args.kit[1], args.split))
+        return 0
+    if args.adapter:
+        r = explain.run_adapter(cfg, args.name, args.adapter, args.split, n=args.n)
+    else:
+        r = explain.run_claude(cfg, args.name, args.split, exemplars=args.claude == "exemplars")
+    print({k: v for k, v in r.items() if k != "items"})
+    rep = harness.run(cfg, args.name, args.split)
+    s = rep["scores"]
+    print(f"{args.name} on {args.split}: M1 accept {s['M1_av']['accept_rate']:.1%}  entities {s['M5_entities']['pass_rate']:.1%}  "
           f"fallback {s.get('fallback_rate')}")
     print(f"wrote {rep['_out']}")
     return 0
@@ -327,6 +353,7 @@ def main(argv: list[str] | None = None) -> int:
     a = sub.add_parser("pairs", help="build, curate and write the training pairs (paraphrases through Claude)")
     a.add_argument("--retries", type=int, default=1, help="regenerations of a failed paraphrase")
     a.add_argument("--local", action="store_true", help="add the local half of form B: drafts from the untuned base")
+    a.add_argument("--explain", action="store_true", help="build the explain pairs: notes (core points + material) -> passage")
     a.set_defaults(fn=_pairs)
     a = sub.add_parser("baseline", help="run a baseline (b0 Claude, b1 local base, b2 the input) and score it")
     a.add_argument("name", choices=["b0", "b1", "b2"])
@@ -335,7 +362,7 @@ def main(argv: list[str] | None = None) -> int:
     a.set_defaults(fn=_baseline)
     a = sub.add_parser("train", help="train an adapter with mlx-lm on a pairs stage")
     a.add_argument("name", help="adapter name under ~/.quill/adapters/")
-    a.add_argument("--stage", default="s1", choices=("s1", "s2", "s1p", "s2s", "s1ps", "s2m"))
+    a.add_argument("--stage", default="s1", choices=("s1", "s2", "s1p", "s2s", "s1ps", "s2m", "x1"))
     a.add_argument("--passes", type=float, default=1.0)
     a.add_argument("--resume", help="adapter to start from")
     a.add_argument("--lr", type=float, help="learning rate; default is the config's")
@@ -348,6 +375,14 @@ def main(argv: list[str] | None = None) -> int:
     a.add_argument("--n", type=int, default=1, help="candidates per input")
     a.add_argument("--fused", help="path to a fused copy of the base with this adapter merged in")
     a.set_defaults(fn=_run)
+    a = sub.add_parser("explain", help="explain task: write passages from held-out notes with an adapter or Claude, and score them")
+    a.add_argument("name", nargs="?", help="system name for the outputs and report")
+    a.add_argument("--adapter", help="adapter trained on the explain pairs")
+    a.add_argument("--claude", choices=("plain", "exemplars"), help="Claude told to write like a textbook, with or without real passages")
+    a.add_argument("--n", type=int, default=4, help="candidates per input (adapter only)")
+    a.add_argument("--split", choices=["dev", "test"], default="dev")
+    a.add_argument("--kit", nargs=2, metavar=("A", "B"), help="write a blind reading kit for two scored systems")
+    a.set_defaults(fn=_explain)
     a = sub.add_parser("blind", help="blind reading test: build the kit, read it in the terminal, report the binomial p")
     a.add_argument("--test", choices=("A", "R"), required=True, help="A: real vs system. R: system vs baseline against a reference")
     a.add_argument("--system", required=True)

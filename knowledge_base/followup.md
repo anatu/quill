@@ -36,6 +36,52 @@ Caveats on 0a: two passes over 338 pairs raises memorization risk; watch M9 and 
 
 A cleaner long-term fix is to repair the pairs instead of dropping them: regenerate the failing drafts so each carries exactly the target's items (Claude calls for the Claude half; local for the local half). Needs a decision on the Claude spend.
 
+## Update, 2026-11-13 (later): the target is textbook prose, judged by the user
+
+The user set the yardstick after reading the corpus research ([corpus_research.md](corpus_research.md)):
+
+- **Target register:** a high-quality textbook. Coherent, well-structured exposition.
+- **Judge:** the user, an expert reader and heavy LLM user. Lay-reader preference is rejected as a measure: too broad, and it rewards punchy, theatrical writing.
+- **Consequences for the corpus:** the report optimized for plain explanatory prose and reader preference. Under the new target, open textbooks move to the front and news, forum answers and digests move back. The report's textbook coverage is thin: OpenStax's licence is in conflict between sources, and single-author open textbooks were not surveyed.
+- **Consequences for evaluation:** blind pairs, the user picking, against two baselines: vanilla Claude and Claude told to write like a textbook. The second is the real bar. Criteria: structure (definitions before use, one idea per paragraph, explicit steps), coherence, precision; not liveliness.
+- **Open:** a focused licence check of open textbooks, book by book.
+
+## Plan, 2026-11-15: the explain task (option 2, chosen by the user)
+
+**Why.** Restyling holds content fixed, so it cannot teach what makes textbook prose good: restating a definition, working an example, separating near-synonyms, choosing the order. The fact lists used so far run to 0.79 of the passage's length and keep its order, so "facts → passage" is restyling again.
+
+**The task.** Input: sparse notes. Target: the passage.
+- Claude (Sonnet) reduces each chunk to **CORE** (three to six points the passage teaches, no examples or restatements) and **MATERIAL** (the specific details it draws on, as bare data).
+- MATERIAL is shuffled per chunk, so the order of exposition is the model's choice.
+- Every name and number in a target is still in its input. The entity gate therefore still catches invention; what the model adds is explanation, order and connection, not facts.
+- Template: `op: explain`, `input: notes`. Code: `pairs/explain.py`, `eval/explain.py`, `configs/prompts/notes.txt`.
+
+**Steps**
+1. Build notes for the 514 train and dev chunks; curate (shape, closure, notes at 0.10-0.60 of target length, token limit). Report: `eval_reports/tb/explain-v1.md`.
+2. Train `tb-x1` from `tb-s2m` on the explain pairs, one pass, LR 1e-4.
+3. Write from the held-out dev notes with: `tb-x1` (N=4, gates, rerank); Claude told to write like a textbook (`bt`); Claude with three real passages as exemplars (`bt-ex`). All three see the same notes.
+4. Score with the harness; compare the tic profile against the book (sentence length and spread, paragraph length), entity pass, copying.
+5. Write a blind kit, `tb-x1` against `bt-ex`, for the user to pick from. That pick is the result that counts.
+6. If `tb-x1` is promising but rough: a second pass, or training on explain and restyle pairs together.
+
+**What would count as success:** the user prefers `tb-x1` to `bt-ex` in a clear majority of blind pairs, with entity pass and copying no worse than the restyle adapter's. **What would end it:** outputs that invent claims or garble meaning more than occasionally; an 8B model writing 300 words from notes has much more room to go wrong than one restyling a draft.
+
+**Budget:** about $6 for notes, $4 for the two Claude baselines.
+
+**Progress, 2026-11-15.** Step 1 done: 428 train and 34 dev pairs after repair (notes that missed a name or number get it added; length limit 0.75). Notes came out thicker than intended, especially for short chunks. Steps 2 to 5 are running. Early read: Claude writes well from notes this full, so the bar is high.
+
+## Update, 2026-11-14: target register confirmed; the model book needs asking first
+
+- **Register confirmed by the user:** connected, example-driven textbook exposition, as in Peterson and Davie, *Computer Networks: A Systems Approach*, section 1.5.1. The aim is to exceed what Claude writes when told to write like a textbook; those prompted samples are the baseline, not the target.
+- **What the target does that prompted Claude does not:** restates a definition a second way, works numeric examples through, separates near-synonyms, links each sentence to the last, varies sentence length, and reads as an author choosing what the reader needs next.
+- **Peterson and Davie, checked directly on 2026-11-14:**
+  - The repository's LICENSE file is CC BY 4.0. The README gives the attribution wanted (title, authors, "Copyright: Elsevier, 2012", source URL, licence).
+  - The README also says: "While this license does not automatically grant the right to make derivative works, we are keen to discuss derivative works (such as translations) with interested parties. Please reach out to discuss@systemsapproach.org."
+  - The README carries a "Written by humans, not by AI" badge.
+  - The book website's robots.txt disallows a long list of AI agents, including ClaudeBot, Claude-User and Claude-Code.
+  - Reading: the licence permits use, but the publisher signals in three ways that it does not want AI systems taking the text. Project rule is to honour AI opt-outs. So: ask before using it. Nothing has been cloned or downloaded.
+- **Next:** (1) draft a consent request to discuss@systemsapproach.org; (2) sample the other licence-clean textbooks for the same register and for any AI stance: DeVoe, Lane, Kuttler, Austin, Open Data Structures, and with ShareAlike Crowell, Hefferon, OpenIntro, Ellingson.
+
 ## Update, 2026-11-13: goal change
 
 The near-term goal is now clear preference over generic AI writing on informational content (summaries, walkthroughs), not matching one author. See the logbook entry of this date. Consequences:

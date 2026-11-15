@@ -70,13 +70,22 @@ def counts(text: str) -> dict:
                 emdashes=text.count("—"))
 
 
-def main(tag: str = "paraphrase", which: str = "essay", fused: str = "~/.quill/models/qwen3-8b-sft-v1-s2m-fused-6bit", n: int = 4) -> None:
-    cfg = config.load(None)
+def main(tag: str = "paraphrase", which: str = "essay", voice_config: str = "", adapter: str = "",
+         fused: str = "~/.quill/models/qwen3-8b-sft-v1-s2m-fused-6bit", n: int = 4) -> None:
+    """voice_config and adapter pick another voice (e.g. configs/textbook.yaml tb-s2m); the Claude
+    drafts always come from the default config's cache, so both voices restyle the same drafts."""
+    base_cfg = config.load(None)
     briefs = SETS[which]
-    claude = Claude(cfg, cfg.get("gen", {}).get("draft_model", "claude-opus-5-5"))
+    claude = Claude(base_cfg, base_cfg.get("gen", {}).get("draft_model", "claude-opus-5-5"))
+    cfg = config.load(voice_config) if voice_config else base_cfg
     drafts = claude.map([(VANILLA.format(words=b["words"], brief=b["brief"], facts="\n".join("- " + f for f in b["facts"])),)
                          for b in briefs])
-    gen = Local(dict(cfg, gen=dict(cfg.get("gen", {}), base_model=str(Path(fused).expanduser()))))
+    if adapter:
+        from quill.train import adapter_dir
+
+        gen = Local(cfg, adapter=adapter_dir(cfg, adapter))
+    else:
+        gen = Local(dict(cfg, gen=dict(cfg.get("gen", {}), base_model=str(Path(fused).expanduser()))))
     ctx = harness.Context(cfg)
     out = []
     for b, d in zip(briefs, drafts):
@@ -103,4 +112,4 @@ def main(tag: str = "paraphrase", which: str = "essay", fused: str = "~/.quill/m
 
 
 if __name__ == "__main__":
-    main(*sys.argv[1:3])
+    main(*sys.argv[1:5])

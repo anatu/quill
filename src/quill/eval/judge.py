@@ -5,6 +5,8 @@ least 75% of dev pairs. It is never told the author's name.
 """
 from __future__ import annotations
 
+from .. import config as _config
+
 import json
 import random
 import time
@@ -70,7 +72,7 @@ def run(cfg: dict, part: str = "dev", n: int = 40, systems=("b0", "b1"), seed: i
                    if c["id"] in out[a] and c["id"] in out[b]]
             rep[f"{a}_vs_{b}"] = _tally(ask(claude, prs))
     rep["new_calls"], rep["cost_usd"] = claude.calls, round(claude.cost, 2)
-    d = harness.REPO / "eval_reports"
+    d = _config.reports_dir(harness.REPO, cfg)
     (d / f"m11-judge-{part}.json").write_text(json.dumps(rep, indent=1))
     L = [f"# M11 judge on {part} ({rep['generated']})", "",
          f"Model {claude.model}. Each pair is asked in both orders; a win needs the same pick both times. "

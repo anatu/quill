@@ -11,6 +11,8 @@ Briefs: <paths.eval>/coverage/briefs.jsonl, one JSON object per line:
 """
 from __future__ import annotations
 
+from .. import config as _config
+
 import json
 import time
 from pathlib import Path
@@ -85,7 +87,7 @@ def run(cfg: dict, system: str, ctx=None) -> dict:
                                 threshold_dev_p95=round(thr, 4), over_threshold=round(float((d > thr).mean()), 4)),
                length_within_30pct=round(float(np.mean(words)), 4) if words else None,
                not_implemented=harness.NOT_IMPLEMENTED, dropped=harness.DROPPED)
-    out = harness.REPO / "eval_reports" / f"coverage-{system}.md"
+    out = _config.reports_dir(harness.REPO, cfg) / f"coverage-{system}.md"
     L = harness.render(rep).splitlines()
     L.insert(3, f"Coverage probe: {len(items)} briefs from outside the author's topics. Topic drift: {rep['topic_drift']}. "
                 f"Length within 30%: {rep['length_within_30pct']}.")

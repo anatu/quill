@@ -5,6 +5,8 @@ A scorer that leans on content accepts them. No scorer here has trained on any d
 """
 from __future__ import annotations
 
+from .. import config as _config
+
 import json
 import time
 from pathlib import Path
@@ -73,7 +75,7 @@ def run(cfg: dict, part: str = "dev", ctx=None, systems=("b0", "b1"), write: boo
     rep = dict(system="verifier-check", split=part, generated=time.strftime("%Y-%m-%dT%H:%M:%S"),
                passages=dict(author=len(orig), draft=len(draft), impostor=len(imp)), scorers=res)
     if write:
-        d = harness.REPO / "eval_reports"
+        d = _config.reports_dir(harness.REPO, cfg)
         (d / f"verifier-check-{part}.json").write_text(json.dumps(rep, indent=1))
         sy = list(sys_segs)
         L = [f"# Verifier check on {part} ({rep['generated']})", "",
@@ -136,7 +138,7 @@ def with_drafts(cfg: dict, part: str = "dev", ctx=None, systems=("b0", "b1"), fo
     rep = dict(system="verifier-check-with-drafts", split=part, folds=folds, draft_mass=mass,
                generated=time.strftime("%Y-%m-%dT%H:%M:%S"), scorers=res)
     if write:
-        d = harness.REPO / "eval_reports"
+        d = _config.reports_dir(harness.REPO, cfg)
         (d / f"verifier-check-drafts-{part}.json").write_text(json.dumps(rep, indent=1))
         ks = list(sets)
         L = [f"# Verifier check with draft negatives, {part} ({rep['generated']})", "",
@@ -181,7 +183,7 @@ def detector(cfg: dict, part: str = "dev", ctx=None, systems=("b0", "b1", "b2"),
     ok = all(res[s]["auc"] >= 0.80 for s in systems if s in res)
     rep = dict(system="m10-fast-detectgpt", split=part, generated=time.strftime("%Y-%m-%dT%H:%M:%S"), model="gpt-neo-2.7B",
                threshold=round(thr, 4), sets=res, **{"pass": ok})
-    d = harness.REPO / "eval_reports"
+    d = _config.reports_dir(harness.REPO, cfg)
     (d / f"m10-{part}.json").write_text(json.dumps(rep, indent=1))
     L = [f"# M10 Fast-DetectGPT on {part} ({rep['generated']})", "",
          "Analytic Fast-DetectGPT with gpt-neo-2.7B. Higher scores read as machine text. The flag threshold passes 5% of "

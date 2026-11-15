@@ -4,6 +4,104 @@ One entry per experiment or finding, newest first. Each entry says what was run,
 
 ---
 
+## 2026-11-15: The explain task: notes-to-passage pairs built; plan and README rewritten around it
+
+**Decision (user, 2026-11-14).** Try a different training task instead of restyling. Plan: [followup.md](followup.md) and [plan.md](plan.md) section 4.
+
+**The task.** Claude (Sonnet) reduces each chunk to CORE (three to six points it teaches) and MATERIAL (specific details, as bare data). MATERIAL is shuffled per chunk. The adapter learns to write the passage from the notes: template `op: explain`, `input: notes`. Code: `pairs/explain.py`, `eval/explain.py`, `configs/prompts/notes.txt`, `quill pairs --explain`, `quill explain`.
+
+**Why not the existing fact lists.** They run to 0.79 of the passage's length (median) and keep its order, so "facts → passage" is restyling under another name.
+
+**Pairs** (`eval_reports/tb/explain-v1.md`). 511 new Sonnet calls, $5.29.
+
+| | First rules | After repair |
+|---|---|---|
+| Train kept | 220 of 475 (46.3%) | 428 of 475 (90.1%) |
+| Dev kept | 20 of 39 | 34 of 39 |
+| Fails, train | closure 101, ratio 168 | closure 9, ratio 38 |
+| Notes / target words, median | 0.49 | 0.54 |
+
+- **Closure:** 101 train notes lacked a name or number the passage has, usually one. The item is now added to MATERIAL from the passage with a few words around it (`build_row`); no extra Claude call.
+- **Ratio:** Claude's notes are thicker than the third asked for, and thickest for short chunks (median 0.67 under 300 words, 0.41 over 500). The limit moved from 0.60 to 0.75. Notes stay thinner than the fact lists and unordered, but this is a weaker test of "the model decides the content" than intended for short passages.
+- Median 5 core bullets and 7 material bullets per chunk.
+- A first training run on the 220-pair set was stopped and discarded.
+
+**Early signal on the baseline.** For one train passage I gave Claude Opus the same notes with the textbook instruction. Its passage was well organised and complete, about as good as the book's on a read. With notes this full, writing the passage is not hard for Claude. The blind comparison will show whether the adapter adds anything; I would not bet on it.
+
+**Running:** `tb-x1` (from `tb-s2m`, 428 pairs, one pass, LR 1e-4); then `tb-x1` at N=4, `bt` (Claude, textbook instruction) and `bt-ex` (plus three real passages) on the 34 dev notes; then the blind kit `tb-x1` against `bt-ex`.
+
+**Docs.** `knowledge_base/plan.md` is now v3, written around the textbook goal and the explain task; v2 is in `knowledge_base/archive/plan-v2-essayist.md`. The README leads with the target passage and the notes-to-passage task, keeps the essayist experiment as "How it got here", and states what is not established. Research notes moved to `knowledge_base/research_notes/informational-corpus/`.
+
+---
+
+## 2026-11-14: The textbook adapter does not beat textbook-prompted Claude; the method transfers surface, and this register's quality is not on the surface
+
+**Training.** `tb-s1p`: 379 pairs, val 0.935 → 0.437, 48 min, peak 11.87 GB. `tb-s2m` from it: 839 pairs, LR 5e-5, val 0.694 → 0.712 (flat and noisy; low 0.599 at step 160), 109.5 min, peak 12.62 GB. The low stage-1 loss fits the pairs finding: a paraphrase of textbook prose is close to the target already.
+
+**Look at outputs** (`scripts/compare_examples.py`, pairs in `~/.quill/tb/examples/`; four informational briefs, N=4, usual gates; a look, not a measurement).
+
+| Input to the adapter | Tag | What came out |
+|---|---|---|
+| Vanilla Claude draft | paraphrase | A light edit. Sentences a little longer and more connected; 4 of 4 pass the gates |
+| Vanilla Claude draft | draft | A looser rewrite toward the corpus rhythm: mean sentence 20-24 words (corpus 23.1, vanilla Claude 13-19), fewer paragraphs. 2 of 4 fall back; superscripts are lost ("2^20" became "220", "3²" became "32") |
+| Claude's textbook-prompted draft | paraphrase | Nearly identical to the input: a word or two changed per paragraph, same sentence statistics |
+
+- The author verifier for this voice gives the outputs 0.01-0.46 against a threshold of 0.35; one of eight passes. It is fitted against essayists and plain drafts, so it is a weak instrument here.
+- **Nothing here exceeds Claude's textbook-prompted prose.** The adapter adds no second statement of a definition, no worked example and no distinction between near-synonyms. Those are what set the target passage apart.
+
+**Why.** The training task is restyling with the facts held fixed: every fact, example and ordering decision in a target is already in its input, by design, so that the model never invents. That transfers what is on the surface: rhythm, paragraphing, word choice. For the essayist the voice was on the surface, and the method worked (M1 24% → 85%). For a textbook the surface is plain; the quality is in decisions about content: which example to work, which confusion to head off, what to say next. The pipeline forbids the adapter from making those decisions and never shows it one being made. The pairs data said the same thing earlier: paraphrase and target differ little.
+
+**Implication.** On this target, a restyling adapter can at most take the stiffness out of prompted prose. To exceed prompted Claude, the content decisions must improve, and those sit upstream of quill: in what Claude is asked to supply (a definition, a restatement, a worked numeric example, a distinction, a consequence), or in a different training task in which the model is allowed to add explanatory content, with the invention risk that brings on an 8B model.
+
+**Open (for the user):** (1) test Claude with an exposition plan and real exemplar passages from the book, as this voice's B0; (2) decide whether to try an "explain" task for the adapter (input: definitions and bare facts; target: the passage with its examples), accepting that it must be gated hard for invented facts; (3) or use the adapter only as a de-stiffening pass after Claude.
+
+---
+
+## 2026-11-14: Target register fixed; textbook corpus ingested
+
+**Target (user, 2026-11-14).** Connected, example-driven textbook exposition, as in Peterson and Davie, *Computer Networks: A Systems Approach*. The user is the judge. The aim is to exceed what Claude writes when told to write like a textbook; lay-reader preference is rejected as a measure.
+
+**Baseline to beat.** Claude Opus with one instruction ("in the manner of a high-quality textbook: define each term before using it, one idea per paragraph, explicit steps") on the four informational briefs: terms defined, steps explicit, facts right. Its faults are stiffness: over-definition, short uniform sentences (spread of sentence length 4.5 to 6.6 words), mechanical paragraph openers. The target passage, by contrast, restates a definition a second way, works numeric examples through, separates near-synonyms, and links each sentence to the last.
+
+**Corpus research** ([corpus_research.md](corpus_research.md), notes in `knowledge_base/research_notes/informational-corpus/`). OpenStax is out: every preface opened is CC BY-NC-SA and bars LLM training without written permission (policy update dated 22 April 2026). Licence-clean textbooks exist: about 600,000 words attribution-only and over a million with ShareAlike (estimates).
+
+**First book: Peterson and Davie.**
+- Licence CC BY 4.0 (LICENSE file in the repository). The publisher also signals reluctance about AI: the website's robots.txt blocks AI agents, the README has a "not by AI" badge and asks to be contacted about derivative works. The user reports having obtained consent (2026-11-14); recorded in `~/.quill/legal/scope_systemsapproach.yaml` with `copy: pending`. Publishing outputs or weights is marked unknown there.
+- Source: a sparse clone of the repository, `.rst` files only (2.8 MB, commit `ed40b37`, version 6.2-dev). The website was not crawled.
+- Reader: `src/quill/ingest/rst.py`. One section file is one post. Figures, tables, code and display maths become gap markers (`<FIGURE>`); sidebars and admonitions are skipped; figure references get a number.
+- Build (`uv run quill --config configs/textbook.yaml ingest`, data under `~/.quill/tb/`):
+
+| | Textbook corpus | First corpus, for scale |
+|---|---|---|
+| Sections / posts kept | 61 | 330 |
+| Words | 213,738 | 318,971 |
+| Chunks | 570 (median 336 words) | 835 |
+| Buckets 150-300 / 300-500 / 500-800 | 234 / 166 / 170 | |
+| Sentence length, mean (SD) | 23.1 (11.4) words | 14.7 (9.3) |
+| Duplicate paragraphs, twin groups | 0, 0 | |
+| PII regex hits | 10 (email addresses, to review: likely protocol examples) | |
+
+- 213,738 words is below the 300,000 the first corpus had. The same authors' other open books (SDN, 5G, TCP congestion control, operations, security) would add words in the same voice; their licences have not been checked.
+
+**Splits and pairs (same day).** Report: `eval_reports/tb/pairs-v1.md`. Splits frozen by topic, hash `01d1b806b169`: train 45 sections / 475 chunks / 178,320 words; dev 6 / 39 / 14,033; test 10 / 56 / 21,385. Eval inputs frozen (hash `08617ef7dd73`). 249 of 514 train and dev chunks carry a gap marker; the `<IMAGE>` marker name is kept so prompts and code are shared with the first corpus.
+
+| Train pairs | Chunks | Kept | Median MIS | Median word similarity to target | Fails |
+|---|---|---|---|---|---|
+| A: paraphrase → target | 475 | 379 (79.8%) | 0.951 | 0.81 | copy 93, closure 3 |
+| B: draft → target | 475 | 460 (96.8%) | 0.932 | 0.48 | closure 12, meaning 3 |
+
+- **The pairs gate fails as written:** 365 of 475 train chunks keep both forms (76.8%, gate 85%).
+- **Cause: a neutral paraphrase of textbook prose is close to a copy.** Median word similarity of paraphrase to target is 0.81 here against 0.72 for the essayist; 92 train paraphrases exceed the 0.85 limit against 2. Textbook prose is already plain and its technical terms cannot be reworded, so "flatten the style" leaves little to change. Form A therefore carries less signal for this corpus than form B, where the draft is rebuilt from a fact list.
+- Form B is cleaner than before (96.8% kept against 93.2%).
+- Cost: $33.06 in Claude calls (Opus $15.29, Sonnet $17.77), over the $15-20 I estimated; the train drafts alone were $17.34.
+- **Process error, fixed:** the textbook run overwrote `eval_reports/pairs-v1.{md,json}`, the first corpus's report. I restored both from git. Reports for a named voice now go to `eval_reports/<voice>/` (`config.reports_dir`; `voice: tb` in `configs/textbook.yaml`).
+
+**Training (running).** Same recipe as the best first-corpus adapter: `tb-s1p` (379 form A pairs with merged input paragraphs, one pass, LR 1e-4), then `tb-s2m` from it (forms A and B joined, 839 pairs, one pass, LR 5e-5). Adapters under `~/.quill/tb/adapters/`.
+
+**Still to build for this voice:** verifier negatives that include Claude's textbook-prompted prose (the baseline); the blind kit against prompted Claude.
+
+---
+
 ## 2026-11-13: Against vanilla Claude on new material, the voice is distinct only in the stylish mode, and it does not suit informational prose
 
 **Goal change (user, 2026-11-13).** Near term: outputs a reader clearly prefers to generic AI writing. Matching a human author is a later goal. Real-vs-quill blind reads are deferred; vanilla-Claude-vs-quill is the comparison that matters now.

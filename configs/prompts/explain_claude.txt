@@ -1,0 +1,5 @@
+Write a textbook passage of about {words} words from the notes below, in the manner of a high-quality textbook: coherent, well-structured exposition. CORE holds the points to teach. MATERIAL holds the details you may draw on to explain them; use every name and number in the notes, and add no name, number or fact that is not there.
+Plain paragraphs only: no title, no headings, no lists. Output only the passage.
+{exemplars}
+NOTES:
+{notes}

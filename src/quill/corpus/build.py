@@ -16,7 +16,18 @@ QUOTE_REASONS = ("blockquote", "inline_quote", "quote_attribution")
 
 
 def slug_of(file: str) -> str:
-    return re.sub(r"^collabfund\.com_blog_|_?\.html$", "", file)
+    """collabfund.com_blog_x_.html -> x; chapter/section.rst -> chapter-section."""
+    return re.sub(r"^collabfund\.com_blog_|_?\.html$|\.rst$", "", file).replace("/", "-")
+
+
+def load_source(cfg: dict, raw: Path) -> list[dict]:
+    """corpus.source picks the reader: collabfund (HTML pages, the default) or rst (a Sphinx book)."""
+    c = cfg["corpus"]
+    if c.get("source", "collabfund") == "rst":
+        from ..ingest import rst
+
+        return rst.read_posts(raw, author=cfg["author"]["name"], url=c.get("source_url", ""))
+    return read_posts(raw)
 
 
 def _words(p: dict) -> int:
@@ -37,7 +48,7 @@ def build(cfg: dict, raw: Path | None = None) -> dict:
     drop_cfg, tag_cfg = c.get("drop_posts") or {}, c.get("post_tags") or {}
     consent_ref = str(cfg.get("decisions", {}).get("consent_record", ""))
 
-    posts = read_posts(raw)
+    posts = load_source(cfg, raw)
     own_words = sum(len(b["text"].split()) for p in posts for b in p["blocks"] if not b["bq"])
     for p in posts:
         p["slug"] = slug_of(p["file"])
@@ -147,7 +158,8 @@ def build(cfg: dict, raw: Path | None = None) -> dict:
 def render_report(r: dict) -> str:
     L = [f"# Cleaning report ({r['generated']})", "",
          f"- Pages {r['pages']}; kept posts {r['kept_posts']}; words {r['words']:,}; tier {r['tier']}.",
-         f"- Phase 0 figure {r['phase0_words']:,}; difference {r['word_delta']:+,} (explained below).",
+         *([f"- Phase 0 figure {r['phase0_words']:,}; difference {r['word_delta']:+,} (explained below)."]
+           if r["phase0_words"] else []),
          f"- Quote words stripped {r['quote_words']:,}. Duplicate paragraphs dropped {r['duplicate_paragraphs']} "
          f"({r['dropped_blocks'].get('duplicate_paragraph', {}).get('words', 0):,} words).",
          f"- Twin posts {r['twins']['posts']}; split groups {len(r['twins']['groups'])}; "
@@ -159,7 +171,7 @@ def render_report(r: dict) -> str:
     L += [f"| {p['slug']} | {p['reason']} | {p['words']} | {p['title']} |" for p in r["dropped_posts"]]
     gone = sum(v["words"] for k, v in r["dropped_blocks"].items() if k != "blockquote")
     L += ["", "## Word reconciliation", "",
-          f"- Phase 0 reader (generic rules): {r['phase0_words']:,} words in 342 posts.",
+          *([f"- Phase 0 reader (generic rules): {r['phase0_words']:,} words in 342 posts."] if r["phase0_words"] else []),
           f"- Phase 1 reader, text outside block quotes, all {r['pages']} pages: {r['own_words_before_cleaning']:,}.",
           f"- Minus dropped blocks other than block quotes (table below): {gone:,}.",
           f"- Minus text left in dropped posts: {sum(p['words'] for p in r['dropped_posts']):,}.",

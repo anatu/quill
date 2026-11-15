@@ -1,0 +1,32 @@
+{
+ "generated": "2026-11-15T10:04:30",
+ "splits": {
+  "train": {
+   "chunks": 475,
+   "kept": 428,
+   "material_added": 101,
+   "fails": {
+    "closure": 9,
+    "ratio": 38
+   },
+   "notes_to_target_words": 0.536,
+   "core_bullets": 5.0,
+   "material_bullets": 7.0,
+   "max_tokens": 1491
+  },
+  "dev": {
+   "chunks": 39,
+   "kept": 34,
+   "material_added": 9,
+   "fails": {
+    "closure": 1,
+    "ratio": 4
+   },
+   "notes_to_target_words": 0.514,
+   "core_bullets": 5.0,
+   "material_bullets": 7.0,
+   "max_tokens": 1250
+  }
+ },
+ "recurated": true
+}

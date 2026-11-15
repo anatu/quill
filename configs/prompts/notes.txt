@@ -1,0 +1,15 @@
+Reduce the passage below to working notes from which a textbook author could write it.
+
+CORE: the few points the passage exists to teach: its definitions and central claims. Three to six terse bullets. No examples, no illustrations, no restatements, no motivation, no caveats.
+MATERIAL: the specific details the passage draws on to explain those points: example values, named systems and protocols, quantities, cases, figure references. Bare data, a few words each. Do not say what a detail shows or how the passage uses it. Include every name, number, date, unit and acronym expansion in the passage that is not already in CORE.
+
+Write in your own plain words. Copy names, numbers and technical terms exactly; copy no other run of four or more words. Ignore any line that reads exactly <QUOTE> or <IMAGE>. Keep the whole to about a third of the passage's length.
+
+Output exactly this shape and nothing else:
+CORE:
+- ...
+MATERIAL:
+- ...
+
+PASSAGE:
+{text}

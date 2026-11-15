@@ -3,8 +3,8 @@ and inference see byte-identical prompts (plan.md 2.3, Phase 3)."""
 from __future__ import annotations
 
 VERSION = "quill v2"
-OPS = ("restyle",)
-INPUTS = ("paraphrase", "draft")
+OPS = ("restyle", "explain")          # explain: write the passage from notes (core points + material)
+INPUTS = ("paraphrase", "draft", "notes")
 BUCKETS = ("150-300", "300-500", "500-800")
 VOICE = "v0"
 

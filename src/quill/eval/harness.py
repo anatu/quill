@@ -11,6 +11,8 @@ Reports hold aggregate numbers only, never corpus text.
 """
 from __future__ import annotations
 
+from .. import config as _config
+
 import json
 import time
 from pathlib import Path
@@ -434,8 +436,7 @@ def run_sanity(cfg: dict, use_embeddings: bool = True) -> dict:
 
 
 def write_report(rep: dict, name: str) -> dict:
-    d = REPO / "eval_reports"
-    d.mkdir(exist_ok=True)
+    d = _config.reports_dir(REPO)
     (d / f"{name}.json").write_text(json.dumps(rep, indent=1))
     (d / f"{name}.md").write_text(render(rep))
     rep["_out"] = str(d / f"{name}.md")
@@ -500,7 +501,7 @@ def render(rep: dict) -> str:
 
 def baseline_report(cfg: dict, part: str = "dev", systems=("b0", "b1", "b2")) -> dict:
     """The Phase 2 exit report: gathers the saved reports into eval_reports/baseline-v2."""
-    d = REPO / "eval_reports"
+    d = _config.reports_dir(REPO)
     get = lambda n: json.loads((d / f"{n}.json").read_text()) if (d / f"{n}.json").exists() else None
     san = get("phase2-sanity")
     sysr = {s: get(f"{s}-{part}") for s in systems}

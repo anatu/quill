@@ -10,6 +10,8 @@ The target is never edited.
 """
 from __future__ import annotations
 
+from .. import config as _config
+
 import difflib
 import json
 import re
@@ -238,7 +240,7 @@ def report(cfg: dict, rows: list[dict], extra: dict | None = None) -> dict:
               f"The gate is 85%: {'passes' if rep['gate']['passed'] else 'fails'}."]
     for k, v in (extra or {}).items():
         L += ["", f"{k}: {json.dumps(v)}"]
-    d = REPO / "eval_reports"
+    d = _config.reports_dir(REPO, cfg)
     (d / f"pairs-{G.VERSION}.json").write_text(json.dumps(rep, indent=1))
     (d / f"pairs-{G.VERSION}.md").write_text("\n".join(L) + "\n")
     return rep
